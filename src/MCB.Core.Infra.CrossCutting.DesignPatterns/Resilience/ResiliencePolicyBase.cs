@@ -15,15 +15,15 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
 
         // Fields
-        private AsyncRetryPolicy _asyncRetryPolicy;
-        private AsyncCircuitBreakerPolicy _asyncCircuitBreakerPolicy;
+        private AsyncRetryPolicy? _asyncRetryPolicy;
+        private AsyncCircuitBreakerPolicy? _asyncCircuitBreakerPolicy;
 
         // Protected Properties
         protected ILogger Logger { get; }
 
         // Public Properties
         public string Name { get; private set; }
-        public CircuitState CircuitState => _asyncCircuitBreakerPolicy.CircuitState switch
+        public CircuitState CircuitState => _asyncCircuitBreakerPolicy?.CircuitState switch
         {
             Polly.CircuitBreaker.CircuitState.Closed => CircuitState.Closed,
             Polly.CircuitBreaker.CircuitState.Open => CircuitState.Open,
@@ -108,22 +108,28 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             config(resilienceConfig);
 
             ResilienceConfig = resilienceConfig;
+            ApplyConfig(ResilienceConfig);
         }
         public void CloseCircuitBreakerManually()
         {
             Logger.LogWarning("");
-            _asyncCircuitBreakerPolicy.Reset();
+            _asyncCircuitBreakerPolicy?.Reset();
         }
         public void OpenCircuitBreakerManually()
         {
             Logger.LogWarning("");
-            _asyncCircuitBreakerPolicy.Isolate();
+            _asyncCircuitBreakerPolicy?.Isolate();
             IncrementCircuitBreakerOpenCount();
         }
         public async Task ExecuteAsync(Func<Task> handler)
         {
             try
             {
+                if (_asyncCircuitBreakerPolicy is null
+                    || _asyncRetryPolicy is null
+                )
+                    return;
+
                 await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
                     await _asyncRetryPolicy.ExecuteAsync(async () =>
                         await handler().ConfigureAwait(false)
