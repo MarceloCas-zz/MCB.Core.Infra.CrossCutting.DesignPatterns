@@ -13,6 +13,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
     {
         // Constants
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
+        private const string ASYNC_RETRY_POLICY_CANNOT_BE_NULL = "AsyncRetryPolicy cannot be null";
+        private const string ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL = "AsyncCircuitBreakerPolicy cannot be null";
         private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|Retry|CurrentRetryCount:{1}";
         private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitOpen|CurrentCircuitBreakerOpenCount:{1}";
         private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitCloseManually";
@@ -80,7 +82,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                     if (resilienceConfig.IsLoggingEnable)
                         Logger.LogWarning(ON_RETRY_LOG_MESSAGE, ResilienceConfig.Name, CurrentRetryCount);
 
-                    resilienceConfig.OnRetryAditionalHandler?.Invoke((exception, retryAttemptWaitingTime));
+                    resilienceConfig.OnRetryAditionalHandler?.Invoke((CurrentRetryCount, retryAttemptWaitingTime, exception));
                 }
             );
 
@@ -104,7 +106,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
 
                     IncrementCircuitBreakerOpenCount();
 
-                    resilienceConfig.OnCircuitBreakerOpenAditionalHandler?.Invoke((exception, waitingTime));
+                    resilienceConfig.OnCircuitBreakerOpenAditionalHandler?.Invoke((CurrentCircuitBreakerOpenCount, waitingTime, exception));
                 },
                 onReset: () => {
                     if (resilienceConfig.IsLoggingEnable)
@@ -149,20 +151,26 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
 
             _asyncCircuitBreakerPolicy?.Isolate();
         }
-        public async Task ExecuteAsync(Func<Task> handler)
+        public async Task<bool> ExecuteAsync(Func<Task> handler)
         {
             try
             {
-                if (_asyncCircuitBreakerPolicy is null
-                    || _asyncRetryPolicy is null
-                )
-                    return;
+                if (_asyncRetryPolicy is null)
+                    throw new ArgumentNullException(paramName: nameof(_asyncRetryPolicy), ASYNC_RETRY_POLICY_CANNOT_BE_NULL);
+                if (_asyncCircuitBreakerPolicy is null)
+                    throw new ArgumentNullException(paramName: nameof(_asyncCircuitBreakerPolicy), ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL);
 
-                await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
+                var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
                     await _asyncRetryPolicy.ExecuteAsync(async () =>
                         await handler().ConfigureAwait(false)
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
+
+                if (policyResult.Outcome != OutcomeType.Successful)
+                    return false;
+
+                ResetCurrentRetryCount();
+                return true;
             }
             catch (Exception ex)
             {
@@ -170,10 +178,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                     Logger.LogError(ex.Message);
 
                 throw;
-            }
-            finally
-            {
-                ResetCurrentRetryCount();
             }
         }
     }
