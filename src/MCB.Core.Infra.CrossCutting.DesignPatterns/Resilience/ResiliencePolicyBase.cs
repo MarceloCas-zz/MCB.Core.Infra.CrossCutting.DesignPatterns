@@ -142,9 +142,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private void ValidatePreExecution()
         {
             if (_asyncRetryPolicy is null)
-                throw new ArgumentNullException(paramName: nameof(_asyncRetryPolicy), ASYNC_RETRY_POLICY_CANNOT_BE_NULL);
+                throw new NullReferenceException(ASYNC_RETRY_POLICY_CANNOT_BE_NULL);
             if (_asyncCircuitBreakerPolicy is null)
-                throw new ArgumentNullException(paramName: nameof(_asyncCircuitBreakerPolicy), ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL);
+                throw new NullReferenceException(ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL);
         }
 
         // Public Methods
