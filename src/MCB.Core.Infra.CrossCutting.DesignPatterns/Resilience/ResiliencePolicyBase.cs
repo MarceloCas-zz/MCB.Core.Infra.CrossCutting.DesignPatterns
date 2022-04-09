@@ -13,6 +13,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
     {
         // Constants
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
+        private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|Retry|CurrentRetryCount:{1}";
+        private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitOpen|CurrentCircuitBreakerOpenCount:{1}";
+        private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitCloseManually";
+        private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitHalfOpen";
+        private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitOpenManually";
 
         // Fields
         private AsyncRetryPolicy? _asyncRetryPolicy;
@@ -31,7 +36,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             Polly.CircuitBreaker.CircuitState.Isolated => CircuitState.Isolated,
             _ => 0,
         };
-        public int CircuitBreakerOpenCount { get; private set; }
+        public int CurrentRetryCount {get; private set; }
+        public int CurrentCircuitBreakerOpenCount { get; private set; }
         public ResilienceConfig ResilienceConfig { get; private set; }
 
         // Constructors
@@ -41,12 +47,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             ResilienceConfig = new ResilienceConfig();
 
             ApplyConfig(ResilienceConfig);
-            ResetCircuitBreakerOpenCount();
+            ResetCurrentCircuitBreakerOpenCount();
         }
 
         // Private Methods
-        private void ResetCircuitBreakerOpenCount() => CircuitBreakerOpenCount = 0;
-        private void IncrementCircuitBreakerOpenCount() => CircuitBreakerOpenCount++;
+        private void ResetCurrentRetryCount() => CurrentRetryCount = 0;
+        private void IncrementRetryCount() => CurrentRetryCount++;
+        private void ResetCurrentCircuitBreakerOpenCount() => CurrentCircuitBreakerOpenCount = 0;
+        private void IncrementCircuitBreakerOpenCount() => CurrentCircuitBreakerOpenCount++;
         private void ApplyConfig(ResilienceConfig resilienceConfig)
         {
             Name = resilienceConfig.Name;
@@ -65,8 +73,13 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             _asyncRetryPolicy = retryPolicyBuilder.WaitAndRetryAsync(
                 retryCount: resilienceConfig.RetryMaxAttemptCount,
                 sleepDurationProvider: resilienceConfig.RetryAttemptWaitingTimeFunction,
-                onRetry: (exception, retryAttemptWaitingTime) => {
-                    Logger.LogError("");
+                onRetry: (exception, retryAttemptWaitingTime) => 
+                {
+                    IncrementRetryCount();
+
+                    if (resilienceConfig.IsLoggingEnable)
+                        Logger.LogWarning(ON_RETRY_LOG_MESSAGE, ResilienceConfig.Name, CurrentRetryCount);
+
                     resilienceConfig.OnRetryAditionalHandler?.Invoke((exception, retryAttemptWaitingTime));
                 }
             );
@@ -86,40 +99,55 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                 exceptionsAllowedBeforeBreaking: EXCEPTIONS_ALLOWED_BEFORE_BREAKING,
                 durationOfBreak: resilienceConfig.CircuitBreakerWaitingTimeFunction(),
                 onBreak: (exception, waitingTime) => {
-                    Logger.LogError("");
+                    if (resilienceConfig.IsLoggingEnable)
+                        Logger.LogWarning(ON_OPEN_LOG_MESSAGE, ResilienceConfig.Name, CurrentCircuitBreakerOpenCount);
+
+                    IncrementCircuitBreakerOpenCount();
+
                     resilienceConfig.OnCircuitBreakerOpenAditionalHandler?.Invoke((exception, waitingTime));
                 },
                 onReset: () => {
-                    Logger.LogError("");
+                    if (resilienceConfig.IsLoggingEnable)
+                        Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
+
+                    ResetCurrentRetryCount();
+                    ResetCurrentCircuitBreakerOpenCount();
+
                     resilienceConfig.OnCircuitBreakerResetOpenAditionalHandler?.Invoke();
                 },
                 onHalfOpen: () => {
-                    Logger.LogError("");
+                    if (resilienceConfig.IsLoggingEnable)
+                        Logger.LogWarning(ON_HALF_OPEN_LOG_MESSAGE, ResilienceConfig.Name);
+
+                    ResetCurrentRetryCount();
+                    ResetCurrentCircuitBreakerOpenCount();
+
                     resilienceConfig.OnCircuitBreakerHalfOpenAditionalHandler?.Invoke();
                 }
             );
         }
 
         // Public Methods
-        public void Configure(Action<ResilienceConfig> config)
+        public void Configure(Action<ResilienceConfig> configureAction)
         {
             var resilienceConfig = new ResilienceConfig();
 
-            config(resilienceConfig);
+            configureAction(resilienceConfig);
 
             ResilienceConfig = resilienceConfig;
             ApplyConfig(ResilienceConfig);
         }
         public void CloseCircuitBreakerManually()
         {
-            Logger.LogWarning("");
+            // Log is write in onReset handler durring _asyncCircuitBreakerPolicy configuration
             _asyncCircuitBreakerPolicy?.Reset();
         }
         public void OpenCircuitBreakerManually()
         {
-            Logger.LogWarning("");
+            if(ResilienceConfig.IsLoggingEnable)
+                Logger.LogWarning(ON_OPEN_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
+
             _asyncCircuitBreakerPolicy?.Isolate();
-            IncrementCircuitBreakerOpenCount();
         }
         public async Task ExecuteAsync(Func<Task> handler)
         {
@@ -138,10 +166,15 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex.Message);
+                if(ResilienceConfig.IsLoggingEnable)
+                    Logger.LogError(ex.Message);
+
                 throw;
             }
+            finally
+            {
+                ResetCurrentRetryCount();
+            }
         }
-        
     }
 }
