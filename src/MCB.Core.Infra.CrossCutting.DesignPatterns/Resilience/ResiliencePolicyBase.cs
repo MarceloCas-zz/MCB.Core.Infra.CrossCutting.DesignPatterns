@@ -15,11 +15,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
         private const string ASYNC_RETRY_POLICY_CANNOT_BE_NULL = "AsyncRetryPolicy cannot be null";
         private const string ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL = "AsyncCircuitBreakerPolicy cannot be null";
-        private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|Retry|CurrentRetryCount:{1}";
-        private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitOpen|CurrentCircuitBreakerOpenCount:{1}";
-        private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitCloseManually";
-        private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitHalfOpen";
-        private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{0}|CircuitOpenManually";
+        private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
+        private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
+        private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
+        private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
+        private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
 
         // Fields
         private AsyncRetryPolicy? _asyncRetryPolicy;
