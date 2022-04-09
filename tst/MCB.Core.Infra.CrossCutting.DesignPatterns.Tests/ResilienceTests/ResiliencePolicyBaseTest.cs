@@ -27,12 +27,18 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
         }
 
         // Private Methods
+#pragma warning disable CS8604 // Possible null reference argument.
         private ResiliencePolicyWithAllConfig CreateResiliencePolicyWithAllConfig() => new(
             _fixture.ServiceProvider.GetService<ILogger<ResiliencePolicyWithAllConfig>>()
         );
-        private ResiliencePolicyWithMinimumConfig CreateResiliencePolicyWithMinimumConfig() => 
-            new ResiliencePolicyWithMinimumConfig(_fixture.ServiceProvider.GetService<ILogger<ResiliencePolicyWithMinimumConfig>>());
-        
+#pragma warning restore CS8604 // Possible null reference argument.
+
+#pragma warning disable CS8604 // Possible null reference argument.
+        private ResiliencePolicyWithMinimumConfig CreateResiliencePolicyWithMinimumConfig() => new(
+            _fixture.ServiceProvider.GetService<ILogger<ResiliencePolicyWithMinimumConfig>>()
+        );
+#pragma warning restore CS8604 // Possible null reference argument.
+
         [Fact]
         public async Task ResiliencePolicy_Should_Execute_With_Success()
         {
