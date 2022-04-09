@@ -20,6 +20,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
         private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
         private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
+        private const string ERROR_ON_EXECUTE_ASYNC = "ResiliencePolicy|Name:{Name}|Exception:{Exception}";
 
         // Fields
         private AsyncRetryPolicy? _asyncRetryPolicy;
@@ -192,7 +193,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             catch (Exception ex)
             {
                 if(ResilienceConfig.IsLoggingEnable)
-                    Logger.LogError(ex.Message);
+                    Logger.LogError(ERROR_ON_EXECUTE_ASYNC, ResilienceConfig.Name, ex);
 
                 throw;
             }

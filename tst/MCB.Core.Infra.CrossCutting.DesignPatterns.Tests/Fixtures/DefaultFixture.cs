@@ -27,7 +27,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.Fixtures
         }
 
         // Private Methods
-        private IServiceCollection ConfigureServices(IServiceCollection services)
+        private static IServiceCollection ConfigureServices(IServiceCollection services)
         {
             services.AddLogging();
 
