@@ -136,7 +136,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         }
 
         // Protected Methods
-        protected CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) =>
+        protected static CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) =>
             pollyCircuitState switch
             {
                 Polly.CircuitBreaker.CircuitState.Closed => CircuitState.Closed,

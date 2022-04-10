@@ -221,7 +221,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
         }
 
         // Public Methods
-        public new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => base.GetCircuitState(pollyCircuitState);
+        public static new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => ResiliencePolicyBase.GetCircuitState(pollyCircuitState);
     }
     public class ResiliencePolicyWithMinimumConfig
         : ResiliencePolicyBase
@@ -247,6 +247,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
         }
 
         // Public Methods
-        public new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => base.GetCircuitState(pollyCircuitState);
+        public static new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => ResiliencePolicyBase.GetCircuitState(pollyCircuitState);
     }
 }
