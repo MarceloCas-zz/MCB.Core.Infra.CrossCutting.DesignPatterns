@@ -15,6 +15,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
         private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
         private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
+        private const string ON_CLOSE_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitClose";
         private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
         private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
         private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
@@ -105,12 +106,12 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                 onReset: () =>
                 {
                     if (resilienceConfig.IsLoggingEnable)
-                        Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
+                        Logger.LogWarning(ON_CLOSE_LOG_MESSAGE, ResilienceConfig.Name);
 
                     ResetCurrentRetryCount();
                     ResetCurrentCircuitBreakerOpenCount();
 
-                    resilienceConfig.OnCircuitBreakerResetOpenAditionalHandler?.Invoke();
+                    resilienceConfig.OnCircuitBreakerCloseAditionalHandler?.Invoke();
                 },
                 onHalfOpen: () =>
                 {
@@ -118,7 +119,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                         Logger.LogWarning(ON_HALF_OPEN_LOG_MESSAGE, ResilienceConfig.Name);
 
                     ResetCurrentRetryCount();
-                    ResetCurrentCircuitBreakerOpenCount();
 
                     resilienceConfig.OnCircuitBreakerHalfOpenAditionalHandler?.Invoke();
                 }
@@ -158,7 +158,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         }
         public void CloseCircuitBreakerManually()
         {
-            // Log is write in onReset handler durring _asyncCircuitBreakerPolicy configuration
+            if (ResilienceConfig.IsLoggingEnable)
+                Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
+
             _asyncCircuitBreakerPolicy?.Reset();
         }
         public void OpenCircuitBreakerManually()
