@@ -165,7 +165,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                 config.OnCircuitBreakerResetOpenAditionalHandler = () => { OnCircuitBreakerResetOpenAditionalHandlerCount++; };
                 // Exceptions
                 config.ExceptionHandleConfigArray = new[] {
-                    new Func<Exception, bool>(ex => ex.GetType() == typeof(ArgumentException))
+                    new Func<Exception, bool>(ex => ex.GetType() == typeof(ArgumentException)),
+                    new Func<Exception, bool>(ex => ex.GetType() == typeof(InvalidOperationException))
                 };
                 // Loggin
                 config.IsLoggingEnable = true;
@@ -188,7 +189,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                 config.CircuitBreakerWaitingTimeFunction = () => TimeSpan.FromSeconds(3);
                 // Exceptions
                 config.ExceptionHandleConfigArray = new[] {
-                    new Func<Exception, bool>(ex => ex.GetType() == typeof(ArgumentException))
+                    new Func<Exception, bool>(ex => ex.GetType() == typeof(ArgumentException)),
+                    new Func<Exception, bool>(ex => ex.GetType() == typeof(InvalidOperationException))
                 };
             });
         }
