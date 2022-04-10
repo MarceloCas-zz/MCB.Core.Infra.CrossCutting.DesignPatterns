@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Resilience.Enums;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
@@ -181,12 +182,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
     public class ResiliencePolicyWithAllConfig
         : ResiliencePolicyBase
     {
+        // Properties
         public int OnRetryAditionalHandlerCount { get; private set; }
         public int OnCircuitBreakerCloseAditionalHandlerCount { get; private set; }
         public int OnCircuitBreakerHalfOpenAditionalHandlerCount { get; private set; }
         public int OnCircuitBreakerOpenAditionalHandlerCount { get; private set; }
         public int OnCircuitBreakerResetOpenAditionalHandlerCount { get; private set; }
 
+        // Constructors
         public ResiliencePolicyWithAllConfig(ILogger<ResiliencePolicyWithAllConfig> logger)
             : base(logger)
         {
@@ -216,10 +219,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                 config.IsLoggingEnable = true;
             });
         }
+
+        // Public Methods
+        public new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => base.GetCircuitState(pollyCircuitState);
     }
     public class ResiliencePolicyWithMinimumConfig
         : ResiliencePolicyBase
     {
+        // Constructors
         public ResiliencePolicyWithMinimumConfig(ILogger<ResiliencePolicyWithMinimumConfig> logger)
             : base(logger)
         {
@@ -238,5 +245,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                 };
             });
         }
+
+        // Public Methods
+        public new CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) => base.GetCircuitState(pollyCircuitState);
     }
 }

@@ -20,38 +20,35 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
 
         // Fields
-        private AsyncRetryPolicy? _asyncRetryPolicy;
-        private AsyncCircuitBreakerPolicy? _asyncCircuitBreakerPolicy;
+        private AsyncRetryPolicy _asyncRetryPolicy;
+        private AsyncCircuitBreakerPolicy _asyncCircuitBreakerPolicy;
 
         // Protected Properties
         protected ILogger Logger { get; }
 
         // Public Properties
         public string Name { get; private set; }
-        public CircuitState CircuitState => _asyncCircuitBreakerPolicy?.CircuitState switch
-        {
-            Polly.CircuitBreaker.CircuitState.Closed => CircuitState.Closed,
-            Polly.CircuitBreaker.CircuitState.Open => CircuitState.Open,
-            Polly.CircuitBreaker.CircuitState.HalfOpen => CircuitState.HalfOpen,
-            Polly.CircuitBreaker.CircuitState.Isolated => CircuitState.Isolated,
-            _ => 0,
-        };
+
+        public CircuitState CircuitState => GetCircuitState(_asyncCircuitBreakerPolicy.CircuitState);
+
         public int CurrentRetryCount {get; private set; }
         public int CurrentCircuitBreakerOpenCount { get; private set; }
         public ResilienceConfig ResilienceConfig { get; private set; }
 
         // Constructors
+        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         protected ResiliencePolicyBase(ILogger logger)
+        #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
             Logger = logger;
             ResilienceConfig = new ResilienceConfig();
-            Name = this.GetType().Name;
 
             ApplyConfig(ResilienceConfig);
             ResetCurrentCircuitBreakerOpenCount();
         }
 
         // Private Methods
+
         private void ResetCurrentRetryCount() => CurrentRetryCount = 0;
         private void IncrementRetryCount() => CurrentRetryCount++;
         private void ResetCurrentCircuitBreakerOpenCount() => CurrentCircuitBreakerOpenCount = 0;
@@ -138,6 +135,17 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             ConfigureCircuitBreakerPolicy(resilienceConfig);
         }
 
+        // Protected Methods
+        protected CircuitState GetCircuitState(Polly.CircuitBreaker.CircuitState pollyCircuitState) =>
+            pollyCircuitState switch
+            {
+                Polly.CircuitBreaker.CircuitState.Closed => CircuitState.Closed,
+                Polly.CircuitBreaker.CircuitState.Open => CircuitState.Open,
+                Polly.CircuitBreaker.CircuitState.HalfOpen => CircuitState.HalfOpen,
+                Polly.CircuitBreaker.CircuitState.Isolated => CircuitState.Isolated,
+                _ => throw new ArgumentOutOfRangeException(nameof(pollyCircuitState))
+            };
+
         // Public Methods
         public void Configure(Action<ResilienceConfig> configureAction)
         {
@@ -163,13 +171,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         public async Task<bool> ExecuteAsync(Func<Task> handler)
         {
 
-            #pragma warning disable CS8602 // Dereference of a possibly null reference.
             var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
                     await handler().ConfigureAwait(false)
                 ).ConfigureAwait(false)
             ).ConfigureAwait(false);
-            #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
             if (policyResult.Outcome != OutcomeType.Successful)
                 return false;
