@@ -39,6 +39,39 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
 #pragma warning restore CS8604 // Possible null reference argument.
 
         [Fact]
+        public void ResiliencePolicy_Should_Get_Correctly_Status()
+        {
+            // Arrange
+            var pollyClosedStatus = Polly.CircuitBreaker.CircuitState.Closed;
+            var pollyOpenStatus = Polly.CircuitBreaker.CircuitState.Open;
+            var pollyHalfOpenStatus = Polly.CircuitBreaker.CircuitState.HalfOpen;
+            var pollyIsolatedOpenStatus = Polly.CircuitBreaker.CircuitState.Isolated;
+            var invalidPollyStatus = (Polly.CircuitBreaker.CircuitState)int.MaxValue;
+            var hasErrorOnInvalidPollyStatus = false;
+
+            // Act
+            var closedStatus = ResiliencePolicyWithAllConfig.GetCircuitState(pollyClosedStatus);
+            var openStatus = ResiliencePolicyWithAllConfig.GetCircuitState(pollyOpenStatus);
+            var halfOpenStatus = ResiliencePolicyWithAllConfig.GetCircuitState(pollyHalfOpenStatus);
+            var isolatedOpenStatus = ResiliencePolicyWithAllConfig.GetCircuitState(pollyIsolatedOpenStatus);
+            try
+            {
+                ResiliencePolicyWithAllConfig.GetCircuitState(invalidPollyStatus);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                hasErrorOnInvalidPollyStatus = true;
+            }
+
+            // Assert
+            closedStatus.Should().Be(CircuitState.Closed);
+            openStatus.Should().Be(CircuitState.Open);
+            halfOpenStatus.Should().Be(CircuitState.HalfOpen);
+            isolatedOpenStatus.Should().Be(CircuitState.Isolated);
+            hasErrorOnInvalidPollyStatus.Should().BeTrue();
+        }
+
+        [Fact]
         public async Task ResiliencePolicy_Should_Execute_With_Success()
         {
             // Arrange
