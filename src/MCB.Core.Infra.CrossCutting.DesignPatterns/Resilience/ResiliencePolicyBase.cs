@@ -13,14 +13,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
     {
         // Constants
         private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
-        private const string ASYNC_RETRY_POLICY_CANNOT_BE_NULL = "AsyncRetryPolicy cannot be null";
-        private const string ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL = "AsyncCircuitBreakerPolicy cannot be null";
         private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
         private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
         private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
         private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
         private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
-        private const string ERROR_ON_EXECUTE_ASYNC = "ResiliencePolicy|Name:{Name}|Exception:{Exception}";
 
         // Fields
         private AsyncRetryPolicy? _asyncRetryPolicy;
@@ -140,13 +137,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             // Circuit Breaker
             ConfigureCircuitBreakerPolicy(resilienceConfig);
         }
-        private void ValidatePreExecution()
-        {
-            if (_asyncRetryPolicy is null)
-                throw new InvalidOperationException(ASYNC_RETRY_POLICY_CANNOT_BE_NULL);
-            if (_asyncCircuitBreakerPolicy is null)
-                throw new InvalidOperationException(ASYNC_CIRCUIT_BREAKER_POLICY_CANNOT_BE_NULL);
-        }
 
         // Public Methods
         public void Configure(Action<ResilienceConfig> configureAction)
@@ -172,31 +162,20 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         }
         public async Task<bool> ExecuteAsync(Func<Task> handler)
         {
-            try
-            {
-                ValidatePreExecution();
 
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
-                    await _asyncRetryPolicy.ExecuteAsync(async () =>
-                        await handler().ConfigureAwait(false)
-                    ).ConfigureAwait(false)
-                ).ConfigureAwait(false);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
+            #pragma warning disable CS8602 // Dereference of a possibly null reference.
+            var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
+                await _asyncRetryPolicy.ExecuteAsync(async () =>
+                    await handler().ConfigureAwait(false)
+                ).ConfigureAwait(false)
+            ).ConfigureAwait(false);
+            #pragma warning restore CS8602 // Dereference of a possibly null reference.
 
-                if (policyResult.Outcome != OutcomeType.Successful)
-                    return false;
+            if (policyResult.Outcome != OutcomeType.Successful)
+                return false;
 
-                ResetCurrentRetryCount();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                if(ResilienceConfig.IsLoggingEnable)
-                    Logger.LogError(ERROR_ON_EXECUTE_ASYNC, ResilienceConfig.Name, ex);
-
-                throw;
-            }
+            ResetCurrentRetryCount();
+            return true;
         }
     }
 }
