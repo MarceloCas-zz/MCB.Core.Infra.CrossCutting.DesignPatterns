@@ -349,6 +349,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithAllConfig.OpenCircuitBreakerManually();
             resiliencePolicyWithMinimumConfig.OpenCircuitBreakerManually();
 
+            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
+            await Task.Delay(resiliencePolicyWithMinimumConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
+
             successOnRunResiliencePolicyAfterManuallyOpenedWithAllConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
                 return Task.CompletedTask;
             });
@@ -361,6 +364,68 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             successOnRunResiliencePolicyWithMinimumConfig.Should().BeTrue();
             successOnRunResiliencePolicyAfterManuallyOpenedWithAllConfig.Should().BeFalse();
             successOnRunResiliencePolicyAfterManuallyOpenedWithMinimumConfig.Should().BeFalse();
+
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Isolated);
+            resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(0);
+
+            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Isolated);
+            resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
+            resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task ResiliencePolicy_Should_Be_Closed_Manually()
+        {
+            // Arrange
+            var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
+            var resiliencePolicyWithMinimumConfig = CreateResiliencePolicyWithMinimumConfig();
+            
+            resiliencePolicyWithAllConfig.OpenCircuitBreakerManually();
+            resiliencePolicyWithMinimumConfig.OpenCircuitBreakerManually();
+
+            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
+            await Task.Delay(resiliencePolicyWithMinimumConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
+
+            var successOnRunResiliencePolicyAfterOpenAndWaitCircuitBreakerWaitingTimeWithAllConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+            var successOnRunResiliencePolicyAfterOpenAndWaitCircuitBreakerWaitingTimeWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+
+            // Act
+            resiliencePolicyWithAllConfig.CloseCircuitBreakerManually();
+            resiliencePolicyWithMinimumConfig.CloseCircuitBreakerManually();
+
+            var successOnRunResiliencePolicyAfterManuallyClosedWithAllConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+            var successOnRunResiliencePolicyAfterManuallyClosedWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+
+            // Assert
+            successOnRunResiliencePolicyAfterOpenAndWaitCircuitBreakerWaitingTimeWithAllConfig.Should().BeFalse();
+            successOnRunResiliencePolicyAfterOpenAndWaitCircuitBreakerWaitingTimeWithMinimumConfig.Should().BeFalse();
+            successOnRunResiliencePolicyAfterManuallyClosedWithAllConfig.Should().BeTrue();
+            successOnRunResiliencePolicyAfterManuallyClosedWithMinimumConfig.Should().BeTrue();
+
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Closed);
+            resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(0);
+
+            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Closed);
+            resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
+            resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
         }
     }
 
