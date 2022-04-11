@@ -161,14 +161,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             if (ResilienceConfig.IsLoggingEnable)
                 Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
 
-            _asyncCircuitBreakerPolicy?.Reset();
+            _asyncCircuitBreakerPolicy.Reset();
         }
         public void OpenCircuitBreakerManually()
         {
             if(ResilienceConfig.IsLoggingEnable)
                 Logger.LogWarning(ON_OPEN_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
 
-            _asyncCircuitBreakerPolicy?.Isolate();
+            _asyncCircuitBreakerPolicy.Isolate();
         }
         public async Task<bool> ExecuteAsync(Func<Task> handler)
         {
