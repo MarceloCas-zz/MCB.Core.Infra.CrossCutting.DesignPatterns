@@ -90,7 +90,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
 
             // Assert
             successOnRunResiliencePolicyWithAllConfig.Should().BeTrue();
-            resiliencePolicyWithAllConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Closed);
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Closed);
             resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
             resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
@@ -99,7 +99,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(0);
 
             successOnRunResiliencePolicyWithMinimumConfig.Should().BeTrue();
-            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Closed);
+            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Closed);
             resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
             resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
         }
@@ -112,12 +112,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             var resiliencePolicyWithMinimumConfig = CreateResiliencePolicyWithMinimumConfig();
             var successOnRunResiliencePolicyWithAllConfig = false;
             var successOnRunResiliencePolicyWithMinimumConfig = false;
-
-            var expectedMinimumWaitingTime = TimeSpan.FromMilliseconds(0);
-            for (int i = 1; i <= resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount; i++)
-                expectedMinimumWaitingTime = expectedMinimumWaitingTime.Add(resiliencePolicyWithAllConfig.ResilienceConfig.RetryAttemptWaitingTimeFunction(i));
-            for (int i = 1; i <= resiliencePolicyWithMinimumConfig.ResilienceConfig.RetryMaxAttemptCount; i++)
-                expectedMinimumWaitingTime = expectedMinimumWaitingTime.Add(resiliencePolicyWithMinimumConfig.ResilienceConfig.RetryAttemptWaitingTimeFunction(i));
 
             // Act
             var stopwatch = Stopwatch.StartNew();
@@ -133,9 +127,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             stopwatch.Stop();
 
             // Assert
-            stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(expectedMinimumWaitingTime);
             successOnRunResiliencePolicyWithAllConfig.Should().BeFalse();
-            resiliencePolicyWithAllConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Open);
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Open);
             resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
             resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
             resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
@@ -143,7 +136,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
 
-            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Open);
+            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Open);
             successOnRunResiliencePolicyWithMinimumConfig.Should().BeFalse();
             resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
             resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(resiliencePolicyWithMinimumConfig.ResilienceConfig.RetryMaxAttemptCount);
@@ -164,7 +157,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
 
             // Assert
             successOnRunResiliencePolicyWithAllConfig.Should().BeFalse();
-            resiliencePolicyWithAllConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Closed);
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Closed);
             resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
             resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
@@ -180,10 +173,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
             var successOnRunResiliencePolicyWithAllConfig = false;
 
-            var expectedMinimumWaitingTime = TimeSpan.FromMilliseconds(0);
-            for (int i = 1; i <= resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount; i++)
-                expectedMinimumWaitingTime = expectedMinimumWaitingTime.Add(resiliencePolicyWithAllConfig.ResilienceConfig.RetryAttemptWaitingTimeFunction(i));
-
             // Act
             var stopwatch = Stopwatch.StartNew();
             successOnRunResiliencePolicyWithAllConfig = await resiliencePolicyWithAllConfig.ExecuteAsync(() =>
@@ -197,8 +186,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
 
             // Assert
             successOnRunResiliencePolicyWithAllConfig.Should().BeTrue();
-            stopwatch.Elapsed.Should().BeGreaterThanOrEqualTo(expectedMinimumWaitingTime);
-            resiliencePolicyWithAllConfig.CircuitState.Should().Be(Abstractions.Resilience.Enums.CircuitState.Closed);
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Closed);
             resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
             resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
@@ -271,7 +259,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             {
                 throw new ArgumentException();
             });
-            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction());
+            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
             successOnRunResiliencePolicyWithAllConfig = await resiliencePolicyWithAllConfig.ExecuteAsync(() =>
             {
                 if (resiliencePolicyWithAllConfig.CurrentRetryCount < resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount)
