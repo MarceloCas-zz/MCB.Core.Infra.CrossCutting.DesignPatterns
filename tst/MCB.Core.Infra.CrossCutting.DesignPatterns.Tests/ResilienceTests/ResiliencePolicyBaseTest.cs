@@ -207,7 +207,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             {
                 throw new ArgumentException();
             });
-            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction());
+            await Task.Delay(resiliencePolicyWithAllConfig.ResilienceConfig.CircuitBreakerWaitingTimeFunction().Add(TimeSpan.FromSeconds(1)));
 
             // Assert
             successOnRunResiliencePolicyWithAllConfig.Should().BeFalse();
