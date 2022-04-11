@@ -232,6 +232,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
             resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
         }
+
         [Fact]
         public async Task ResiliencePolicy_Should_Be_Closed_After_Immediately_Success_During_HalfOpen_CircuitStatus()
         {
@@ -327,6 +328,39 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Closed);
             resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
             resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task ResiliencePolicy_Should_Be_Opened_Manually()
+        {
+            // Arrange
+            var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
+            var resiliencePolicyWithMinimumConfig = CreateResiliencePolicyWithMinimumConfig();
+            var successOnRunResiliencePolicyWithAllConfig = await resiliencePolicyWithAllConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+            var successOnRunResiliencePolicyWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+            var successOnRunResiliencePolicyAfterManuallyOpenedWithAllConfig = false;
+            var successOnRunResiliencePolicyAfterManuallyOpenedWithMinimumConfig = false;
+
+            // Act
+            resiliencePolicyWithAllConfig.OpenCircuitBreakerManually();
+            resiliencePolicyWithMinimumConfig.OpenCircuitBreakerManually();
+
+            successOnRunResiliencePolicyAfterManuallyOpenedWithAllConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+            successOnRunResiliencePolicyAfterManuallyOpenedWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
+                return Task.CompletedTask;
+            });
+
+            // Assert
+            successOnRunResiliencePolicyWithAllConfig.Should().BeTrue();
+            successOnRunResiliencePolicyWithMinimumConfig.Should().BeTrue();
+            successOnRunResiliencePolicyAfterManuallyOpenedWithAllConfig.Should().BeFalse();
+            successOnRunResiliencePolicyAfterManuallyOpenedWithMinimumConfig.Should().BeFalse();
         }
     }
 
