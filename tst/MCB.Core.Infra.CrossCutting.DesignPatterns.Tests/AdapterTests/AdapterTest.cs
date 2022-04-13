@@ -20,6 +20,12 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
 
+            if (adapter == null)
+            {
+                Assert.False(false);
+                return;
+            }
+
             var addressDto = new AddressDto
             {
                 City = "São Paulo",
@@ -31,7 +37,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
 
             // Act
             var address = adapter.Adapt<AddressDto, Address>(addressDto);
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             var address2 = adapter.Adapt<AddressDto, Address>(addressDto, existingTarget: null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             // Assert
             address.City.Should().Be(addressDto.City);
@@ -57,6 +65,12 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             });
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
+            
+            if (adapter == null)
+            {
+                Assert.False(false);
+                return;
+            }
 
             var addressId = Guid.NewGuid();
             var addressDto = new AddressDto
