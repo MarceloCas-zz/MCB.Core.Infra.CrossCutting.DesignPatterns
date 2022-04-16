@@ -28,15 +28,20 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.IoCTests
 
             // Act
             IoC.Bootstrapper.ConfigureServices(services, adapterConfig => { adapterConfigAux = adapterConfig; });
+            var serviceProvider = services.BuildServiceProvider();
 
             // Assert
             var mapperRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IMapper));
             var adapterRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IAdapter));
+            var mapper = serviceProvider.GetService<IMapper>();
+            var adapter = serviceProvider.GetService<IAdapter>();
 
             mapperRegistration.Should().NotBeNull();
             mapperRegistration.Lifetime.Should().Be(adapterConfigAux.AdapterServiceLifetime);
             adapterRegistration.Should().NotBeNull();
             adapterRegistration.Lifetime.Should().Be(adapterConfigAux.AdapterServiceLifetime);
+            mapper.Should().NotBeNull();
+            adapter.Should().NotBeNull();
 
             adapterConfigAux.TypeAdapterConfigurationFunction.Should().BeNull();
         }
@@ -54,15 +59,20 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.IoCTests
                 adapterConfig.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() => { return new TypeAdapterConfig(); });
                 adapterConfigAux = adapterConfig;
             });
+            var serviceProvider = services.BuildServiceProvider();
 
             // Assert
             var mapperRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IMapper));
             var adapterRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IAdapter));
+            var mapper = serviceProvider.GetService<IMapper>();
+            var adapter = serviceProvider.GetService<IAdapter>();
 
             mapperRegistration.Should().NotBeNull();
             mapperRegistration.Lifetime.Should().Be(adapterConfigAux.AdapterServiceLifetime);
             adapterRegistration.Should().NotBeNull();
             adapterRegistration.Lifetime.Should().Be(adapterConfigAux.AdapterServiceLifetime);
+            mapper.Should().NotBeNull();
+            adapter.Should().NotBeNull();
 
             adapterConfigAux.TypeAdapterConfigurationFunction.Should().NotBeNull();
         }
@@ -75,13 +85,18 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.IoCTests
 
             // Act
             IoC.Bootstrapper.ConfigureServices(services, adapterConfigurationAction: null);
+            var serviceProvider = services.BuildServiceProvider();
 
             // Assert
             var mapperRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IMapper));
             var adapterRegistration = services.FirstOrDefault(q => q.ServiceType == typeof(IAdapter));
+            var mapper = serviceProvider.GetService<IMapper>();
+            var adapter = serviceProvider.GetService<IAdapter>();
 
             mapperRegistration.Should().BeNull();
             adapterRegistration.Should().BeNull();
+            mapper.Should().BeNull();
+            adapter.Should().BeNull();
         }
     }
 }
