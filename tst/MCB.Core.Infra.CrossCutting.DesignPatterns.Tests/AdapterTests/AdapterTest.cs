@@ -125,6 +125,36 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             address.Street.Should().Be(addressDto.Street);
             address.ZipCode.Should().Be(addressDto.ZipCode);
         }
+
+        [Fact]
+        public void Adapter_Should_Not_Adapt_Null_Value()
+        {
+            // Arrange
+            var serviceCollection = new ServiceCollection();
+            IoC.Bootstrapper.ConfigureServices(
+                serviceCollection,
+                adapterConfiguration =>
+                {
+                    adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                    adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
+                    {
+                        var typeAdapterConfig = new TypeAdapterConfig();
+
+                        typeAdapterConfig.ForType<AddressDto, Address>();
+
+                        return typeAdapterConfig;
+                    });
+                }
+            );
+            var serviceProvider = serviceCollection.BuildServiceProvider();
+            var adapter = serviceProvider.GetService<IAdapter>();
+
+            // Act
+            var address = adapter.Adapt<AddressDto, Address>(null);
+
+            // Assert
+            address.Should().BeNull();
+        }
     }
 }
 
