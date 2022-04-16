@@ -1,5 +1,5 @@
-﻿using AutoMapper;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
+﻿using Mapster;
+using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC
@@ -8,11 +8,21 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC
     {
         public static void ConfigureServices(
             IServiceCollection services,
-            Action<IMapperConfigurationExpression> mapperConfiguration
+            Action<TypeAdapterConfig> mapperConfiguration,
+            ServiceLifetime mapperServiceLifetime
         )
         {
-            services.AddAutoMapper(q => mapperConfiguration(q));
-            services.AddSingleton<IAdapter, Adapter.Adapter>();
+            services.Add(
+                new ServiceDescriptor(
+                    serviceType: typeof(IMapper),
+                    factory: serviceProvider => {
+                        var typeAdapterConfig = new TypeAdapterConfig();
+                        mapperConfiguration(typeAdapterConfig);
+                        return new Mapper(typeAdapterConfig);
+                    },
+                    lifetime: mapperServiceLifetime
+                )
+            );
         }
     }
 }

@@ -12,11 +12,17 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
         [Fact]
         public void Adapter_Shoul_Be_Adapt_Correctly()
         {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             // Arrange
             var serviceCollection = new ServiceCollection();
-            IoC.Bootstrapper.ConfigureServices(serviceCollection, mapperConfiguration => {
-                mapperConfiguration.CreateMap<AddressDto, Address>();
-            });
+            IoC.Bootstrapper.ConfigureServices(
+                serviceCollection,
+                mapperConfiguration =>
+                {
+                    mapperConfiguration.ForType<AddressDto, Address>();
+                },
+                mapperServiceLifetime: ServiceLifetime.Singleton
+            );
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
 
@@ -26,8 +32,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
                 return;
             }
 
+            var id = Guid.NewGuid();
+
             var addressDto = new AddressDto
             {
+                Id = id,
                 City = "São Paulo",
                 Neighborhood = "Se",
                 Number = "N/A",
@@ -38,34 +47,43 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             // Act
             var address = adapter.Adapt<AddressDto, Address>(addressDto);
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            var address2 = adapter.Adapt<AddressDto, Address>(addressDto, existingTarget: null);
+            var address2 = adapter.Adapt<AddressDto, Address>(addressDto, existingTarget: default);
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             // Assert
+            address.Id.Should().Be(id);
             address.City.Should().Be(addressDto.City);
             address.Neighborhood.Should().Be(addressDto.Neighborhood);
             address.Number.Should().Be(addressDto.Number);
             address.Street.Should().Be(addressDto.Street);
             address.ZipCode.Should().Be(addressDto.ZipCode);
 
-            address2.City.Should().Be(addressDto.City);
+            address2.Id.Should().Be(id);
             address2.Neighborhood.Should().Be(addressDto.Neighborhood);
             address2.Number.Should().Be(addressDto.Number);
             address2.Street.Should().Be(addressDto.Street);
             address2.ZipCode.Should().Be(addressDto.ZipCode);
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+
         }
 
         [Fact]
         public void Adapter_Shoul_Be_Adapt_Correctly_With_Existing_Target()
         {
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             // Arrange
             var serviceCollection = new ServiceCollection();
-            IoC.Bootstrapper.ConfigureServices(serviceCollection, mapperConfiguration => {
-                mapperConfiguration.CreateMap<AddressDto, Address>();
-            });
+            IoC.Bootstrapper.ConfigureServices(
+                serviceCollection, 
+                mapperConfiguration =>
+                {
+                    mapperConfiguration.ForType<AddressDto, Address>();
+                },
+                mapperServiceLifetime: ServiceLifetime.Singleton
+            );
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
-            
+
             if (adapter == null)
             {
                 Assert.False(false);
@@ -93,6 +111,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             address.Number.Should().Be(addressDto.Number);
             address.Street.Should().Be(addressDto.Street);
             address.ZipCode.Should().Be(addressDto.ZipCode);
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
         }
     }
 }
