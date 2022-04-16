@@ -1,4 +1,7 @@
-﻿using FluentAssertions;
+﻿#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
+
+using FluentAssertions;
 using Mapster;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
@@ -13,7 +16,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
         [Fact]
         public void Adapter_Shoul_Be_Adapt_Correctly()
         {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
             // Arrange
             var serviceCollection = new ServiceCollection();
             IoC.Bootstrapper.ConfigureServices(
@@ -53,10 +55,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             };
 
             // Act
-            var address = adapter.Adapt<AddressDto, Address>(addressDto);
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            var address2 = adapter.Adapt<AddressDto, Address>(addressDto, existingTarget: default);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+            var address = adapter.Adapt<AddressDto, Address>(addressDto) ?? new Address();
+            var address2 = adapter.Adapt<AddressDto, Address>(addressDto, existingTarget: default) ?? new Address();
 
             // Assert
             address.Id.Should().Be(id);
@@ -71,14 +71,12 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             address2.Number.Should().Be(addressDto.Number);
             address2.Street.Should().Be(addressDto.Street);
             address2.ZipCode.Should().Be(addressDto.ZipCode);
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
         }
 
         [Fact]
         public void Adapter_Shoul_Be_Adapt_Correctly_With_Existing_Target()
         {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
             // Arrange
             var serviceCollection = new ServiceCollection();
             IoC.Bootstrapper.ConfigureServices(
@@ -117,7 +115,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
 
             // Act
             var address = new Address { AditionalAddressProperty = aditionalAddressProperty };
-            address = adapter.Adapt(addressDto, address);
+            address = adapter.Adapt(addressDto, address) ?? new Address();
 
             // Assert
             address.AditionalAddressProperty.Should().Be(aditionalAddressProperty);
@@ -126,7 +124,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             address.Number.Should().Be(addressDto.Number);
             address.Street.Should().Be(addressDto.Street);
             address.ZipCode.Should().Be(addressDto.ZipCode);
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
         }
     }
 }
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.

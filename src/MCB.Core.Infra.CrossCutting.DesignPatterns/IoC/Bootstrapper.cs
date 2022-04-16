@@ -11,6 +11,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC
         // Private Static Methods
         private static void ConfigureServicesForAdapterPattern(IServiceCollection services, Action<AdapterConfig> adapterConfigurationAction)
         {
+            if (adapterConfigurationAction is null)
+                return;
+
             var adapterConfig = new AdapterConfig();
             adapterConfigurationAction(adapterConfig);
 
