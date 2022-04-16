@@ -1,28 +1,42 @@
 ﻿using Mapster;
 using MapsterMapper;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC
 {
     public static class Bootstrapper
     {
-        public static void ConfigureServices(
-            IServiceCollection services,
-            Action<TypeAdapterConfig> mapperConfiguration,
-            ServiceLifetime mapperServiceLifetime
-        )
+        // Private Static Methods
+        private static void ConfigureServicesForAdapterPattern(IServiceCollection services, Action<AdapterConfig> adapterConfigurationAction)
         {
+            var adapterConfig = new AdapterConfig();
+            adapterConfigurationAction(adapterConfig);
+
             services.Add(
                 new ServiceDescriptor(
                     serviceType: typeof(IMapper),
-                    factory: serviceProvider => {
-                        var typeAdapterConfig = new TypeAdapterConfig();
-                        mapperConfiguration(typeAdapterConfig);
-                        return new Mapper(typeAdapterConfig);
-                    },
-                    lifetime: mapperServiceLifetime
+                    factory: serviceProvider => new Mapper(adapterConfig.TypeAdapterConfigurationFunction?.Invoke() ?? new TypeAdapterConfig()),
+                    lifetime: adapterConfig.AdapterServiceLifetime
                 )
             );
+            services.Add(
+                new ServiceDescriptor(
+                    serviceType: typeof(IAdapter),
+                    implementationType: typeof(Adapter.Adapter),
+                    lifetime: adapterConfig.AdapterServiceLifetime
+                )
+            );
+        }
+
+        // Public Static Methods
+        public static void ConfigureServices(
+            IServiceCollection services,
+            Action<AdapterConfig> adapterConfigurationAction
+        )
+        {
+            ConfigureServicesForAdapterPattern(services, adapterConfigurationAction);
         }
     }
 }

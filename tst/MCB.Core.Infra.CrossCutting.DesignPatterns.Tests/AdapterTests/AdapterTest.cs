@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Mapster;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,11 +18,18 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             var serviceCollection = new ServiceCollection();
             IoC.Bootstrapper.ConfigureServices(
                 serviceCollection,
-                mapperConfiguration =>
+                adapterConfiguration =>
                 {
-                    mapperConfiguration.ForType<AddressDto, Address>();
-                },
-                mapperServiceLifetime: ServiceLifetime.Singleton
+                    adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                    adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
+                    {
+                        var typeAdapterConfig = new TypeAdapterConfig();
+
+                        typeAdapterConfig.ForType<AddressDto, Address>();
+
+                        return typeAdapterConfig;
+                    });
+                }
             );
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
@@ -74,12 +82,19 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             // Arrange
             var serviceCollection = new ServiceCollection();
             IoC.Bootstrapper.ConfigureServices(
-                serviceCollection, 
-                mapperConfiguration =>
+                serviceCollection,
+                adapterConfiguration =>
                 {
-                    mapperConfiguration.ForType<AddressDto, Address>();
-                },
-                mapperServiceLifetime: ServiceLifetime.Singleton
+                    adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                    adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
+                    {
+                        var typeAdapterConfig = new TypeAdapterConfig();
+
+                        typeAdapterConfig.ForType<AddressDto, Address>();
+
+                        return typeAdapterConfig;
+                    });
+                }
             );
             var serviceProvider = serviceCollection.BuildServiceProvider();
             var adapter = serviceProvider.GetService<IAdapter>();
@@ -90,7 +105,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
                 return;
             }
 
-            var addressId = Guid.NewGuid();
+            var aditionalAddressProperty = 1;
             var addressDto = new AddressDto
             {
                 City = "São Paulo",
@@ -101,11 +116,11 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests
             };
 
             // Act
-            var address = new Address { Id = addressId };
+            var address = new Address { AditionalAddressProperty = aditionalAddressProperty };
             address = adapter.Adapt(addressDto, address);
 
             // Assert
-            address.Id.Should().Be(addressId);
+            address.AditionalAddressProperty.Should().Be(aditionalAddressProperty);
             address.City.Should().Be(addressDto.City);
             address.Neighborhood.Should().Be(addressDto.Neighborhood);
             address.Number.Should().Be(addressDto.Number);
