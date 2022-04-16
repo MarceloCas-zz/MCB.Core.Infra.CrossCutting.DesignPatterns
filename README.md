@@ -36,8 +36,8 @@ This project is a source code of [MCB.Core.Infra.CrossCutting.DesignPatterns](ht
 
 ## Features
 
-- Resilience implementation using [Polly](https://dotnetfoundation.org/projects/polly)
-- Adapter implementation using [AutoMapper](https://dotnetfoundation.org/projects/automapper)
+- Resilience implementation using [Polly](https://github.com/App-vNext/Polly)
+- Adapter implementation using [Mapster](https://github.com/MapsterMapper/Mapster)
 
 
 ## Used stack
