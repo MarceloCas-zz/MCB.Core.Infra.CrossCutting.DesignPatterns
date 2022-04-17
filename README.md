@@ -38,6 +38,7 @@ This project is a source code of [MCB.Core.Infra.CrossCutting.DesignPatterns](ht
 
 - Resilience implementation using [Polly](https://github.com/App-vNext/Polly)
 - Adapter implementation using [Mapster](https://github.com/MapsterMapper/Mapster)
+- Validator implementation using [FluentValidation](https://github.com/FluentValidation/FluentValidation)
 
 
 ## Used stack
