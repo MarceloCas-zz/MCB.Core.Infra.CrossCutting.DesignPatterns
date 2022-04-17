@@ -1,5 +1,5 @@
 ﻿using MapsterMapper;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 
 namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Adapter
 {

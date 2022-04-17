@@ -3,7 +3,7 @@
 
 using FluentAssertions;
 using Mapster;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
 using Microsoft.Extensions.DependencyInjection;
 using System;

@@ -1,6 +1,6 @@
 ﻿using Mapster;
 using MapsterMapper;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapters;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models;
 using Microsoft.Extensions.DependencyInjection;
 
