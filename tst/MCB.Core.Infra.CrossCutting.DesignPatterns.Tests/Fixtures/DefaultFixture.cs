@@ -1,6 +1,4 @@
-﻿using Mapster;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using Xunit;
 
