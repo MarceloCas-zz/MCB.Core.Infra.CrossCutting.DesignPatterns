@@ -76,7 +76,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests
     {
         protected override ISubscriber<TSubject> InstanciateSubscriber<TSubject>(Type subscriberType)
         {
-            return (ISubscriber<TSubject>)Activator.CreateInstance(subscriberType);
+            if (subscriberType is null)
+                throw new InvalidOperationException();
+
+            var instance = Activator.CreateInstance(subscriberType);
+            if (instance is null)
+                throw new InvalidOperationException();
+
+            return (ISubscriber<TSubject>)instance;
         }
     }
 }

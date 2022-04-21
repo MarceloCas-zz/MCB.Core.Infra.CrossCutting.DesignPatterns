@@ -13,7 +13,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Observer
         public Dictionary<Type, List<Type>> SubscriptionsDictionary => _subscriptionsDictionary.ToDictionary(entry => entry.Key, entry => entry.Value);
 
         // Constructors
-        public PublisherBase()
+        protected PublisherBase()
         {
             _subscriptionsDictionary = new Dictionary<Type, List<Type>>();
         }
