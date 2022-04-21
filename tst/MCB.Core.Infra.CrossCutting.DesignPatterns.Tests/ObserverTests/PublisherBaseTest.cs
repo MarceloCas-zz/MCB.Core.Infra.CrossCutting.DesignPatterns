@@ -26,6 +26,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests
             // Act
             await samplePublisher.PublishAsync(sampleEvent, default).ConfigureAwait(false);
             await samplePublisher.PublishAsync(new NoSubscriberEvent(), default).ConfigureAwait(false);
+            samplePublisher.SubscriptionsDictionary.Add(typeof(NoSubscriberEvent), new List<Type> { typeof(SampleEventSubscriberA) });
 
             // Assert
             SampleEventSubscriberA.ReceivedSubjects.Should().HaveCount(1);
