@@ -17,6 +17,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests
             // Arrange
             var samplePublisher = new SamplePublisher();
             samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
+            samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
             samplePublisher.Subscribe<SampleEventSubscriberB, SampleEvent>();
 
             var sampleEventGuid = Guid.NewGuid();
@@ -32,6 +33,9 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests
 
             SampleEventSubscriberB.ReceivedSubjects.Should().HaveCount(1);
             SampleEventSubscriberB.ReceivedSubjects[0].Id.Should().Be(sampleEventGuid);
+
+            samplePublisher.SubscriptionsDictionary.Count.Should().Be(1);
+            samplePublisher.SubscriptionsDictionary[typeof(SampleEvent)].Count.Should().Be(2);
         }
     }
 
