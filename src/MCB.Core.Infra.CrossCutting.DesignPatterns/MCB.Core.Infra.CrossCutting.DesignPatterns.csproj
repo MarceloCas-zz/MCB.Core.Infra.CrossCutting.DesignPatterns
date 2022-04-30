@@ -10,7 +10,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FluentValidation" Version="10.4.0" />
 		<PackageReference Include="Mapster" Version="7.3.0" />
 		<PackageReference Include="MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions" Version="0.17.0-alpha" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
