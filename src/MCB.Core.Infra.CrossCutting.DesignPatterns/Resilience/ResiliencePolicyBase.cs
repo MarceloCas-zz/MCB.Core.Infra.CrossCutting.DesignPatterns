@@ -19,6 +19,8 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
         private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
         private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
+        private const string RETRY_POLICY_CONTEXT_INPUT_KEY = "input";
+        private const string RETRY_POLICY_CONTEXT_OUTPUT_KEY = "output";
 
         // Fields
         private AsyncRetryPolicy _asyncRetryPolicy;
@@ -37,7 +39,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         public ResilienceConfig ResilienceConfig { get; private set; }
 
         // Constructors
-        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         protected ResiliencePolicyBase(ILogger logger)
         #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         {
@@ -170,13 +171,16 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
 
             _asyncCircuitBreakerPolicy.Isolate();
         }
+
         public async Task<bool> ExecuteAsync(Func<Task> handler)
         {
-
-            var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(async () =>
-                await _asyncRetryPolicy.ExecuteAsync(async () =>
-                    await handler().ConfigureAwait(false)
-                ).ConfigureAwait(false)
+            var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
+                async () =>
+                {
+                    await _asyncRetryPolicy.ExecuteAsync(async () =>
+                        await handler().ConfigureAwait(false)
+                    ).ConfigureAwait(false);
+                }
             ).ConfigureAwait(false);
 
             if (policyResult.Outcome != OutcomeType.Successful)
@@ -184,6 +188,53 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
 
             ResetCurrentRetryCount();
             return true;
+        }
+        public async Task<bool> ExecuteAsync<TInput>(Func<TInput, Task> handler, TInput input)
+        {
+            var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
+                async (context) =>
+                {
+                    await _asyncRetryPolicy.ExecuteAsync(async () =>
+                        await handler(
+                            (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
+                        ).ConfigureAwait(false)
+                    ).ConfigureAwait(false);
+                },
+                contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
+            ).ConfigureAwait(false);
+
+            if (policyResult.Outcome != OutcomeType.Successful)
+                return false;
+
+            ResetCurrentRetryCount();
+            return true;
+        }
+        public async Task<(bool success, TOutput output)> ExecuteAsync<TInput, TOutput>(Func<TInput, Task<TOutput>> handler, TInput input)
+        {
+            bool success;
+            var contextData = new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } };
+
+            var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
+                async (context) =>
+                {
+                    context.Add(
+                        RETRY_POLICY_CONTEXT_OUTPUT_KEY,
+                        await _asyncRetryPolicy.ExecuteAsync(async () =>
+                            await handler(
+                                (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
+                            ).ConfigureAwait(false)
+                        ).ConfigureAwait(false)
+                    );
+                },
+                contextData
+            ).ConfigureAwait(false);
+
+            success = policyResult.Outcome == OutcomeType.Successful;
+
+            if (success)
+                ResetCurrentRetryCount();
+
+            return (success, output:(TOutput)contextData[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
         }
     }
 }

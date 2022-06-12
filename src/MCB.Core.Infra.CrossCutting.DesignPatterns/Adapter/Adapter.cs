@@ -16,14 +16,14 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Adapter
         }
 
         // Public Methods
-        public TTarget? Adapt<TSource, TTarget>(TSource source)
+        public TTarget Adapt<TSource, TTarget>(TSource source)
         {
             if (source is null)
                 return default;
 
             return _mapper.Map<TTarget>(source);
         }
-        public TTarget? Adapt<TSource, TTarget>(TSource source, TTarget existingTarget)
+        public TTarget Adapt<TSource, TTarget>(TSource source, TTarget existingTarget)
         {
             if(existingTarget is null)
                 return Adapt<TSource, TTarget>(source);
