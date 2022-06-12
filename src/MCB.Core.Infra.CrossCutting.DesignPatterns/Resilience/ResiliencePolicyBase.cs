@@ -228,10 +228,12 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
 
             var success = policyResult.Outcome == OutcomeType.Successful;
 
-            if (success)
-                ResetCurrentRetryCount();
+            if (!success)
+                return (success: false, output: default);
 
-            return (success, output:(TOutput)policyResult.Context[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
+            ResetCurrentRetryCount();
+
+            return (success, output: (TOutput)policyResult.Context[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
         }
     }
 }

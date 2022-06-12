@@ -433,9 +433,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
         {
             // Arrange
             var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
-            var resiliencePolicyWithMinimumConfig = CreateResiliencePolicyWithMinimumConfig();
             var successOnRunResiliencePolicyWithAllConfig = false;
-            var successOnRunResiliencePolicyWithMinimumConfig = false;
 
             var id = Guid.NewGuid();
             var name = "Marcelo Castelo Branco";
@@ -454,9 +452,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                     Name = name
                 }
             );
-            successOnRunResiliencePolicyWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
-                return Task.CompletedTask;
-            });
 
             // Assert
             inputIsValid.Should().BeTrue();
@@ -468,11 +463,36 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(0);
+        }
 
-            successOnRunResiliencePolicyWithMinimumConfig.Should().BeTrue();
-            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Closed);
-            resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
-            resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
+        [Fact]
+        public async Task ResiliencePolicy_Should_Pass_Input_With_Error()
+        {
+            // Arrange
+            var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
+
+            var id = Guid.NewGuid();
+            var name = "Marcelo Castelo Branco";
+            var expectedOutput = $"{id}-{name}";
+
+            // Act
+            var success = await resiliencePolicyWithAllConfig.ExecuteAsync(
+                (input) => {
+                    throw new ArgumentException();
+                },
+                input: (id, name)
+            );
+
+            // Assert
+            success.Should().BeFalse();
+
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Open);
+            resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
         }
 
         [Fact]
@@ -480,8 +500,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
         {
             // Arrange
             var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
-            var resiliencePolicyWithMinimumConfig = CreateResiliencePolicyWithMinimumConfig();
-            var successOnRunResiliencePolicyWithMinimumConfig = false;
 
             var id = Guid.NewGuid();
             var name = "Marcelo Castelo Branco";
@@ -494,9 +512,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
                 },
                 input: (id, name)
             );
-            successOnRunResiliencePolicyWithMinimumConfig = await resiliencePolicyWithMinimumConfig.ExecuteAsync(() => {
-                return Task.CompletedTask;
-            });
 
             // Assert
             success.Should().BeTrue();
@@ -508,11 +523,37 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ResilienceTests
             resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
             resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(0);
+        }
 
-            successOnRunResiliencePolicyWithMinimumConfig.Should().BeTrue();
-            resiliencePolicyWithMinimumConfig.CircuitState.Should().Be(CircuitState.Closed);
-            resiliencePolicyWithMinimumConfig.CurrentCircuitBreakerOpenCount.Should().Be(0);
-            resiliencePolicyWithMinimumConfig.CurrentRetryCount.Should().Be(0);
+        [Fact]
+        public async Task ResiliencePolicy_Should_Pass_Input_And_Return_Output_With_Error()
+        {
+            // Arrange
+            var resiliencePolicyWithAllConfig = CreateResiliencePolicyWithAllConfig();
+
+            var id = Guid.NewGuid();
+            var name = "Marcelo Castelo Branco";
+            var expectedOutput = $"{id}-{name}";
+
+            // Act
+            var (success, output) = await resiliencePolicyWithAllConfig.ExecuteAsync<(Guid id, string name), string>(
+                (input) => {
+                    throw new ArgumentException();
+                },
+                input: (id, name)
+            );
+
+            // Assert
+            success.Should().BeFalse();
+            output.Should().BeNull();
+
+            resiliencePolicyWithAllConfig.CircuitState.Should().Be(CircuitState.Open);
+            resiliencePolicyWithAllConfig.CurrentCircuitBreakerOpenCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.CurrentRetryCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerHalfOpenAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerOpenAditionalHandlerCount.Should().Be(1);
+            resiliencePolicyWithAllConfig.OnCircuitBreakerCloseAditionalHandlerCount.Should().Be(0);
+            resiliencePolicyWithAllConfig.OnRetryAditionalHandlerCount.Should().Be(resiliencePolicyWithAllConfig.ResilienceConfig.RetryMaxAttemptCount);
         }
     }
 
