@@ -212,7 +212,6 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
         public async Task<(bool success, TOutput output)> ExecuteAsync<TInput, TOutput>(Func<TInput, Task<TOutput>> handler, TInput input)
         {
             bool success;
-            var contextData = new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } };
 
             var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
                 async (context) =>
@@ -226,7 +225,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
                         ).ConfigureAwait(false)
                     );
                 },
-                contextData
+                contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
             ).ConfigureAwait(false);
 
             success = policyResult.Outcome == OutcomeType.Successful;
@@ -234,7 +233,7 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience
             if (success)
                 ResetCurrentRetryCount();
 
-            return (success, output:(TOutput)contextData[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
+            return (success, output:(TOutput)policyResult.Context[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
         }
     }
 }
