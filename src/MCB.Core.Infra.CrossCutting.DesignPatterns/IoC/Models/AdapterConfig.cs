@@ -1,18 +1,11 @@
 ﻿using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models
-{
-    public class AdapterConfig
-    {
-        // Properties
-        public Func<TypeAdapterConfig> TypeAdapterConfigurationFunction { get; set; }
-        public ServiceLifetime AdapterServiceLifetime { get; set; }
+namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models;
 
-        // Constructors
-        public AdapterConfig()
-        {
-            AdapterServiceLifetime = ServiceLifetime.Singleton;
-        }
-    }
+public class AdapterConfig
+{
+    // Properties
+    public Func<TypeAdapterConfig> TypeAdapterConfigurationFunction { get; set; }
+    public ServiceLifetime AdapterServiceLifetime { get; set; }
 }

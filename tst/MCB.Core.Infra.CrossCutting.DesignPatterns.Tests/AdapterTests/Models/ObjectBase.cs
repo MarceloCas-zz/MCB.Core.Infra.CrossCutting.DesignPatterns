@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models
+namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
+
+public abstract class ObjectBase
 {
-    public abstract class ObjectBase
-    {
-        public Guid Id { get; set; }
-    }
+    public Guid Id { get; set; }
 }

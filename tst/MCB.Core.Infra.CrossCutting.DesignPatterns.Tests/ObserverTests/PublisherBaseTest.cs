@@ -7,88 +7,87 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests
+namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.ObserverTests;
+
+public class PublisherBaseTest
 {
-    public class PublisherBaseTest
+    [Fact]
+    public async void Subject_Should_Puslished()
     {
-        [Fact]
-        public async void Subject_Should_Puslished()
-        {
-            // Arrange
-            var samplePublisher = new SamplePublisher();
-            samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
-            samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
-            samplePublisher.Subscribe<SampleEventSubscriberB, SampleEvent>();
+        // Arrange
+        var samplePublisher = new SamplePublisher();
+        samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
+        samplePublisher.Subscribe<SampleEventSubscriberA, SampleEvent>();
+        samplePublisher.Subscribe<SampleEventSubscriberB, SampleEvent>();
 
-            var sampleEventGuid = Guid.NewGuid();
-            var sampleEvent = new SampleEvent { Id = sampleEventGuid };
+        var sampleEventGuid = Guid.NewGuid();
+        var sampleEvent = new SampleEvent { Id = sampleEventGuid };
 
-            // Act
-            await samplePublisher.PublishAsync(sampleEvent, default).ConfigureAwait(false);
-            await samplePublisher.PublishAsync(new NoSubscriberEvent(), default).ConfigureAwait(false);
-            samplePublisher.SubscriptionsDictionary.Add(typeof(NoSubscriberEvent), new List<Type> { typeof(SampleEventSubscriberA) });
+        // Act
+        await samplePublisher.PublishAsync(sampleEvent, default).ConfigureAwait(false);
+        await samplePublisher.PublishAsync(new NoSubscriberEvent(), default).ConfigureAwait(false);
+        samplePublisher.SubscriptionsDictionary.Add(typeof(NoSubscriberEvent), new List<Type> { typeof(SampleEventSubscriberA) });
 
-            // Assert
-            SampleEventSubscriberA.ReceivedSubjects.Should().HaveCount(1);
-            SampleEventSubscriberA.ReceivedSubjects[0].Id.Should().Be(sampleEventGuid);
+        // Assert
+        SampleEventSubscriberA.ReceivedSubjects.Should().HaveCount(1);
+        SampleEventSubscriberA.ReceivedSubjects[0].Id.Should().Be(sampleEventGuid);
 
-            SampleEventSubscriberB.ReceivedSubjects.Should().HaveCount(1);
-            SampleEventSubscriberB.ReceivedSubjects[0].Id.Should().Be(sampleEventGuid);
+        SampleEventSubscriberB.ReceivedSubjects.Should().HaveCount(1);
+        SampleEventSubscriberB.ReceivedSubjects[0].Id.Should().Be(sampleEventGuid);
 
-            samplePublisher.SubscriptionsDictionary.Count.Should().Be(1);
-            samplePublisher.SubscriptionsDictionary[typeof(SampleEvent)].Count.Should().Be(2);
-        }
+        samplePublisher.SubscriptionsDictionary.Count.Should().Be(1);
+        samplePublisher.SubscriptionsDictionary[typeof(SampleEvent)].Count.Should().Be(2);
     }
+}
 
-    public class SampleEvent
+public class SampleEvent
+{
+    public Guid Id { get; set; }
+}
+public class NoSubscriberEvent
+{
+
+}
+
+public class SampleEventSubscriberA
+    : ISubscriber<SampleEvent>
+{
+    // Properties
+    public static List<SampleEvent> ReceivedSubjects { get; } = new();
+
+    // Public Methods
+    public Task HandlerAsync(SampleEvent subject, CancellationToken cancellationToken)
     {
-        public Guid Id { get; set; }
+        ReceivedSubjects.Add(subject);
+        return Task.CompletedTask;
     }
-    public class NoSubscriberEvent
-    {
+}
+public class SampleEventSubscriberB
+    : ISubscriber<SampleEvent>
+{
+    // Properties
+    public static List<SampleEvent> ReceivedSubjects { get; } = new();
 
+    // Public Methods
+    public Task HandlerAsync(SampleEvent subject, CancellationToken cancellationToken)
+    {
+        ReceivedSubjects.Add(subject);
+        return Task.CompletedTask;
     }
+}
 
-    public class SampleEventSubscriberA
-        : ISubscriber<SampleEvent>
+public class SamplePublisher
+    : PublisherBase
+{
+    protected override ISubscriber<TSubject> InstanciateSubscriber<TSubject>(Type subscriberType)
     {
-        // Properties
-        public static List<SampleEvent> ReceivedSubjects { get; } = new();
+        if (subscriberType is null)
+            throw new InvalidOperationException();
 
-        // Public Methods
-        public Task HandlerAsync(SampleEvent subject, CancellationToken cancellationToken)
-        {
-            ReceivedSubjects.Add(subject);
-            return Task.CompletedTask;
-        }
-    }
-    public class SampleEventSubscriberB
-        : ISubscriber<SampleEvent>
-    {
-        // Properties
-        public static List<SampleEvent> ReceivedSubjects { get; } = new();
+        var instance = Activator.CreateInstance(subscriberType);
+        if (instance is null)
+            throw new InvalidOperationException();
 
-        // Public Methods
-        public Task HandlerAsync(SampleEvent subject, CancellationToken cancellationToken)
-        {
-            ReceivedSubjects.Add(subject);
-            return Task.CompletedTask;
-        }
-    }
-
-    public class SamplePublisher
-        : PublisherBase
-    {
-        protected override ISubscriber<TSubject> InstanciateSubscriber<TSubject>(Type subscriberType)
-        {
-            if (subscriberType is null)
-                throw new InvalidOperationException();
-
-            var instance = Activator.CreateInstance(subscriberType);
-            if (instance is null)
-                throw new InvalidOperationException();
-
-            return (ISubscriber<TSubject>)instance;
-        }
+        return (ISubscriber<TSubject>)instance;
     }
 }

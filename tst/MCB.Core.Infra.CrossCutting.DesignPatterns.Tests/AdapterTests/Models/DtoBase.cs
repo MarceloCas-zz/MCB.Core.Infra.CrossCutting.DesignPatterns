@@ -1,7 +1,6 @@
-﻿namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models
+﻿namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
+
+public abstract class DtoBase
+    : ObjectBase
 {
-    public abstract class DtoBase
-        : ObjectBase
-    {
-    }
 }
