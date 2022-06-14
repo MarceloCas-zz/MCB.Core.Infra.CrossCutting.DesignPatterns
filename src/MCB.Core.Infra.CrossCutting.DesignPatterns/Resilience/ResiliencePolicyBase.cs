@@ -11,16 +11,16 @@ namespace MCB.Core.Infra.CrossCutting.DesignPatterns.Resilience;
 public abstract class ResiliencePolicyBase
     : IResiliencePolicy
 {
-    // Static Fields
-    private static readonly int exceptionsAllowedBeforeBreaking = 1;
-    private static readonly string onRetryLogMessage = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
-    private static readonly string onOpenLogMessage = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
-    private static readonly string onCloseLogMessage = "ResiliencePolicy|Name:{Name}|CircuitClose";
-    private static readonly string onCloseManuallyLogMessage = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
-    private static readonly string onHalfOpenLogMessage = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
-    private static readonly string onOpenManuallyLogMessage = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
-    private static readonly string retryPolicyContextInputKey = "input";
-    private static readonly string retryPolicyContextOutputKey = "output";
+    // Constants
+    private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
+    private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
+    private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
+    private const string ON_CLOSE_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitClose";
+    private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
+    private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
+    private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
+    private const string RETRY_POLICY_CONTEXT_INPUT_KEY = "input";
+    private const string RETRY_POLICY_CONTEXT_OUTPUT_KEY = "output";
 
     // Fields
     private AsyncRetryPolicy _asyncRetryPolicy;
@@ -73,7 +73,7 @@ public abstract class ResiliencePolicyBase
                 IncrementRetryCount();
 
                 if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(onRetryLogMessage, ResilienceConfig.Name, CurrentRetryCount);
+                    Logger.LogWarning(ON_RETRY_LOG_MESSAGE, ResilienceConfig.Name, CurrentRetryCount);
 
                 resilienceConfig.OnRetryAditionalHandler?.Invoke((CurrentRetryCount, retryAttemptWaitingTime, exception));
             }
@@ -92,12 +92,12 @@ public abstract class ResiliencePolicyBase
         }
 
         _asyncCircuitBreakerPolicy = circuitBreakerPolicyBuilder.CircuitBreakerAsync(
-            exceptionsAllowedBeforeBreaking: exceptionsAllowedBeforeBreaking,
+            exceptionsAllowedBeforeBreaking: EXCEPTIONS_ALLOWED_BEFORE_BREAKING,
             durationOfBreak: resilienceConfig.CircuitBreakerWaitingTimeFunction(),
             onBreak: (exception, waitingTime) =>
             {
                 if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(onOpenLogMessage, ResilienceConfig.Name, CurrentCircuitBreakerOpenCount);
+                    Logger.LogWarning(ON_OPEN_LOG_MESSAGE, ResilienceConfig.Name, CurrentCircuitBreakerOpenCount);
 
                 IncrementCircuitBreakerOpenCount();
 
@@ -106,7 +106,7 @@ public abstract class ResiliencePolicyBase
             onReset: () =>
             {
                 if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(onCloseLogMessage, ResilienceConfig.Name);
+                    Logger.LogWarning(ON_CLOSE_LOG_MESSAGE, ResilienceConfig.Name);
 
                 ResetCurrentRetryCount();
                 ResetCurrentCircuitBreakerOpenCount();
@@ -116,7 +116,7 @@ public abstract class ResiliencePolicyBase
             onHalfOpen: () =>
             {
                 if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(onHalfOpenLogMessage, ResilienceConfig.Name);
+                    Logger.LogWarning(ON_HALF_OPEN_LOG_MESSAGE, ResilienceConfig.Name);
 
                 ResetCurrentRetryCount();
 
@@ -159,14 +159,14 @@ public abstract class ResiliencePolicyBase
     public void CloseCircuitBreakerManually()
     {
         if (ResilienceConfig.IsLoggingEnable)
-            Logger.LogWarning(onCloseManuallyLogMessage, ResilienceConfig.Name);
+            Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
 
         _asyncCircuitBreakerPolicy.Reset();
     }
     public void OpenCircuitBreakerManually()
     {
         if(ResilienceConfig.IsLoggingEnable)
-            Logger.LogWarning(onOpenManuallyLogMessage, ResilienceConfig.Name);
+            Logger.LogWarning(ON_OPEN_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
 
         _asyncCircuitBreakerPolicy.Isolate();
     }
@@ -195,11 +195,11 @@ public abstract class ResiliencePolicyBase
             {
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
                     await handler(
-                        (TInput)context[retryPolicyContextInputKey]
+                        (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
             },
-            contextData: new Dictionary<string, object> { { retryPolicyContextInputKey, input } }
+            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
         ).ConfigureAwait(false);
 
         if (policyResult.Outcome != OutcomeType.Successful)
@@ -214,15 +214,15 @@ public abstract class ResiliencePolicyBase
             async (context) =>
             {
                 context.Add(
-                    retryPolicyContextOutputKey,
+                    RETRY_POLICY_CONTEXT_OUTPUT_KEY,
                     await _asyncRetryPolicy.ExecuteAsync(async () =>
                         await handler(
-                            (TInput)context[retryPolicyContextInputKey]
+                            (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
                         ).ConfigureAwait(false)
                     ).ConfigureAwait(false)
                 );
             },
-            contextData: new Dictionary<string, object> { { retryPolicyContextInputKey, input } }
+            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
         ).ConfigureAwait(false);
 
         var success = policyResult.Outcome == OutcomeType.Successful;
@@ -232,6 +232,6 @@ public abstract class ResiliencePolicyBase
 
         ResetCurrentRetryCount();
 
-        return (success, output: (TOutput)policyResult.Context[retryPolicyContextOutputKey]);
+        return (success, output: (TOutput)policyResult.Context[RETRY_POLICY_CONTEXT_OUTPUT_KEY]);
     }
 }
