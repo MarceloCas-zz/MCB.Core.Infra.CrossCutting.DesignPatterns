@@ -21,6 +21,7 @@ public abstract class PublisherBase
     private void AddSubjectSubscriptionIfNotExists<TSubject>()
     {
         var subjectType = typeof(TSubject);
+
         if (_subscriptionsDictionary.ContainsKey(subjectType))
             return;
 
