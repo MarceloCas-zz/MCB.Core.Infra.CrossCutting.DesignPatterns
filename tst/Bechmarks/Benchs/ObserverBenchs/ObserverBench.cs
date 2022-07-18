@@ -50,6 +50,32 @@ public class ObserverBench
         }
     }
 
+
+    [Benchmark]
+    public void Publish_WithFiveSubscribers_SinglePublisherInstance_Parallel()
+    {
+        var cancellationToken = new CancellationTokenSource().Token;
+
+        var samplePublisher = CreateSamplePublisher();
+
+        var sampleEvent = new SampleEvent();
+
+        Parallel.For(0, IterationCount, async i => {
+            await samplePublisher.PublishAsync(sampleEvent, cancellationToken).ConfigureAwait(false);
+        });
+    }
+    [Benchmark]
+    public void Publish_WithFiveSubscribers_MultiPublisherInstance_Parallel()
+    {
+        var cancellationToken = new CancellationTokenSource().Token;
+        var sampleEvent = new SampleEvent();
+
+        Parallel.For(0, IterationCount, async i => {
+            var samplePublisher = CreateSamplePublisher();
+            await samplePublisher.PublishAsync(sampleEvent, cancellationToken).ConfigureAwait(false);
+        });
+    }
+
     public class SampleEvent
     {
         public Guid Id { get; set; }
