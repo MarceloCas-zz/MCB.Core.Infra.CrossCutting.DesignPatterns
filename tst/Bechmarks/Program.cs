@@ -1,4 +1,4 @@
-﻿using Bechmarks.Benchs.AdapterBenchs;
+﻿using Bechmarks.Benchs.ObserverBenchs;
 using BenchmarkDotNet.Running;
 
-BenchmarkRunner.Run(typeof(AdaptersWithIoCBench));
+BenchmarkRunner.Run(typeof(ObserverBench));
