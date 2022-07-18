@@ -7,7 +7,7 @@ using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Adapter;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Bechmarks.Benchs.AdaptersBenchs;
+namespace Bechmarks.Benchs.AdapterBenchs;
 
 [SimpleJob(RunStrategy.Throughput, launchCount: 1)]
 [HardwareCounters(HardwareCounter.BranchMispredictions, HardwareCounter.BranchInstructions)]
@@ -110,7 +110,8 @@ public class AdaptersWithIoCBench
             IsActive = true
         };
 
-        Parallel.For(0, IterationCount, i => {
+        Parallel.For(0, IterationCount, i =>
+        {
             var adapter = serviceProvider.GetRequiredService<IAdapter>();
             _ = adapter.Adapt<CustomerDataModel, CustomerViewModel>(customerDataModel);
         });
@@ -131,7 +132,8 @@ public class AdaptersWithIoCBench
             IsActive = true
         };
 
-        Parallel.For(0, IterationCount, i => {
+        Parallel.For(0, IterationCount, i =>
+        {
             var adapter = serviceProvider.GetRequiredService<IAdapter>();
             _ = adapter.Adapt<CustomerDataModel, CustomerViewModel>(customerDataModel);
         });
@@ -152,7 +154,8 @@ public class AdaptersWithIoCBench
             IsActive = true
         };
 
-        Parallel.For(0, IterationCount, i => {
+        Parallel.For(0, IterationCount, i =>
+        {
             var scope = serviceProvider.CreateScope();
             var adapter = scope.ServiceProvider.GetRequiredService<IAdapter>();
             _ = adapter.Adapt<CustomerDataModel, CustomerViewModel>(customerDataModel);

@@ -3,11 +3,9 @@ using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Engines;
 using Mapster;
 using MapsterMapper;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Adapter;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Bechmarks.Benchs.AdaptersBenchs;
+namespace Bechmarks.Benchs.AdapterBenchs;
 
 [SimpleJob(RunStrategy.Throughput, launchCount: 1)]
 [HardwareCounters(HardwareCounter.BranchMispredictions, HardwareCounter.BranchInstructions)]
@@ -74,7 +72,8 @@ public class AdapterBench
             IsActive = true
         };
 
-        Parallel.For(0, IterationCount, i => {
+        Parallel.For(0, IterationCount, i =>
+        {
             _ = adapter.Adapt<CustomerDataModel, CustomerViewModel>(customerDataModel);
         });
     }
@@ -90,7 +89,8 @@ public class AdapterBench
             IsActive = true
         };
 
-        Parallel.For(0, IterationCount, i => {
+        Parallel.For(0, IterationCount, i =>
+        {
             var adapter = CreateAdapter();
             _ = adapter.Adapt<CustomerDataModel, CustomerViewModel>(customerDataModel);
         });
