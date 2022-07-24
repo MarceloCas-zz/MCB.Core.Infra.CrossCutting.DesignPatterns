@@ -13,12 +13,6 @@ public abstract class ResiliencePolicyBase
 {
     // Constants
     private const int EXCEPTIONS_ALLOWED_BEFORE_BREAKING = 1;
-    private const string ON_RETRY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|Retry|CurrentRetryCount:{CurrentRetryCount}";
-    private const string ON_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpen|CurrentCircuitBreakerOpenCount:{CurrentCircuitBreakerOpenCount}";
-    private const string ON_CLOSE_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitClose";
-    private const string ON_CLOSE_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitCloseManually";
-    private const string ON_HALF_OPEN_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitHalfOpen";
-    private const string ON_OPEN_MANUALLY_LOG_MESSAGE = "ResiliencePolicy|Name:{Name}|CircuitOpenManually";
     private const string RETRY_POLICY_CONTEXT_INPUT_KEY = "input";
     private const string RETRY_POLICY_CONTEXT_OUTPUT_KEY = "output";
 
@@ -36,15 +30,17 @@ public abstract class ResiliencePolicyBase
 
     public int CurrentRetryCount {get; private set; }
     public int CurrentCircuitBreakerOpenCount { get; private set; }
-    public ResilienceConfig ResilienceConfig { get; private set; }
+    public ResiliencePolicyConfig ResiliencePolicyConfig { get; private set; }
+
+    public ResiliencePolicyConfig ResilienceConfig => throw new NotImplementedException();
 
     // Constructors
     protected ResiliencePolicyBase(ILogger logger)
     {
         Logger = logger;
-        ResilienceConfig = new ResilienceConfig();
+        ResiliencePolicyConfig = new ResiliencePolicyConfig();
 
-        ApplyConfig(ResilienceConfig);
+        ApplyConfig(ResiliencePolicyConfig);
         ResetCurrentCircuitBreakerOpenCount();
     }
 
@@ -54,10 +50,10 @@ public abstract class ResiliencePolicyBase
     private void IncrementRetryCount() => CurrentRetryCount++;
     private void ResetCurrentCircuitBreakerOpenCount() => CurrentCircuitBreakerOpenCount = 0;
     private void IncrementCircuitBreakerOpenCount() => CurrentCircuitBreakerOpenCount++;
-    private void ConfigureRetryPolicy(ResilienceConfig resilienceConfig)
+    private void ConfigureRetryPolicy(ResiliencePolicyConfig resiliencePolicyConfig)
     {
         var retryPolicyBuilder = default(PolicyBuilder);
-        foreach (var exceptionHandleConfig in resilienceConfig.ExceptionHandleConfigArray)
+        foreach (var exceptionHandleConfig in resiliencePolicyConfig.ExceptionHandleConfigArray)
         {
             if (retryPolicyBuilder is null)
                 retryPolicyBuilder = Policy.Handle(exceptionHandleConfig);
@@ -66,24 +62,21 @@ public abstract class ResiliencePolicyBase
         }
 
         _asyncRetryPolicy = retryPolicyBuilder.WaitAndRetryAsync(
-            retryCount: resilienceConfig.RetryMaxAttemptCount,
-            sleepDurationProvider: resilienceConfig.RetryAttemptWaitingTimeFunction,
+            retryCount: resiliencePolicyConfig.RetryMaxAttemptCount,
+            sleepDurationProvider: resiliencePolicyConfig.RetryAttemptWaitingTimeFunction,
             onRetry: (exception, retryAttemptWaitingTime) =>
             {
                 IncrementRetryCount();
 
-                if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(ON_RETRY_LOG_MESSAGE, ResilienceConfig.Name, CurrentRetryCount);
-
-                resilienceConfig.OnRetryAditionalHandler?.Invoke((CurrentRetryCount, retryAttemptWaitingTime, exception));
+                resiliencePolicyConfig.OnRetryAditionalHandler?.Invoke((CurrentRetryCount, retryAttemptWaitingTime, exception));
             }
         );
     }
-    private void ConfigureCircuitBreakerPolicy(ResilienceConfig resilienceConfig)
+    private void ConfigureCircuitBreakerPolicy(ResiliencePolicyConfig resiliencePolicyConfig)
     {
         var circuitBreakerPolicyBuilder = default(PolicyBuilder);
 
-        foreach (var exceptionHandleConfig in resilienceConfig.ExceptionHandleConfigArray)
+        foreach (var exceptionHandleConfig in resiliencePolicyConfig.ExceptionHandleConfigArray)
         {
             if (circuitBreakerPolicyBuilder is null)
                 circuitBreakerPolicyBuilder = Policy.Handle(exceptionHandleConfig);
@@ -93,46 +86,37 @@ public abstract class ResiliencePolicyBase
 
         _asyncCircuitBreakerPolicy = circuitBreakerPolicyBuilder.CircuitBreakerAsync(
             exceptionsAllowedBeforeBreaking: EXCEPTIONS_ALLOWED_BEFORE_BREAKING,
-            durationOfBreak: resilienceConfig.CircuitBreakerWaitingTimeFunction(),
+            durationOfBreak: resiliencePolicyConfig.CircuitBreakerWaitingTimeFunction(),
             onBreak: (exception, waitingTime) =>
             {
-                if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(ON_OPEN_LOG_MESSAGE, ResilienceConfig.Name, CurrentCircuitBreakerOpenCount);
-
                 IncrementCircuitBreakerOpenCount();
 
-                resilienceConfig.OnCircuitBreakerOpenAditionalHandler?.Invoke((CurrentCircuitBreakerOpenCount, waitingTime, exception));
+                resiliencePolicyConfig.OnCircuitBreakerOpenAditionalHandler?.Invoke((CurrentCircuitBreakerOpenCount, waitingTime, exception));
             },
             onReset: () =>
             {
-                if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(ON_CLOSE_LOG_MESSAGE, ResilienceConfig.Name);
-
                 ResetCurrentRetryCount();
                 ResetCurrentCircuitBreakerOpenCount();
 
-                resilienceConfig.OnCircuitBreakerCloseAditionalHandler?.Invoke();
+                resiliencePolicyConfig.OnCircuitBreakerCloseAditionalHandler?.Invoke();
             },
             onHalfOpen: () =>
             {
-                if (resilienceConfig.IsLoggingEnable)
-                    Logger.LogWarning(ON_HALF_OPEN_LOG_MESSAGE, ResilienceConfig.Name);
-
                 ResetCurrentRetryCount();
 
-                resilienceConfig.OnCircuitBreakerHalfOpenAditionalHandler?.Invoke();
+                resiliencePolicyConfig.OnCircuitBreakerHalfOpenAditionalHandler?.Invoke();
             }
         );
     }
-    private void ApplyConfig(ResilienceConfig resilienceConfig)
+    private void ApplyConfig(ResiliencePolicyConfig resiliencePolicyConfig)
     {
-        Name = resilienceConfig.Name;
+        Name = resiliencePolicyConfig.Name;
 
         // Retry
-        ConfigureRetryPolicy(resilienceConfig);
+        ConfigureRetryPolicy(resiliencePolicyConfig);
 
         // Circuit Breaker
-        ConfigureCircuitBreakerPolicy(resilienceConfig);
+        ConfigureCircuitBreakerPolicy(resiliencePolicyConfig);
     }
 
     // Protected Methods
@@ -147,37 +131,28 @@ public abstract class ResiliencePolicyBase
         };
 
     // Public Methods
-    public void Configure(Action<ResilienceConfig> configureAction)
+    public void Configure(Func<ResiliencePolicyConfig> configureAction)
     {
-        var resilienceConfig = new ResilienceConfig();
-
-        configureAction(resilienceConfig);
-
-        ResilienceConfig = resilienceConfig;
-        ApplyConfig(ResilienceConfig);
+        var resiliencePolicyConfig = configureAction();
+        ResiliencePolicyConfig = resiliencePolicyConfig;
+        ApplyConfig(ResiliencePolicyConfig);
     }
     public void CloseCircuitBreakerManually()
     {
-        if (ResilienceConfig.IsLoggingEnable)
-            Logger.LogWarning(ON_CLOSE_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
-
         _asyncCircuitBreakerPolicy.Reset();
     }
     public void OpenCircuitBreakerManually()
     {
-        if(ResilienceConfig.IsLoggingEnable)
-            Logger.LogWarning(ON_OPEN_MANUALLY_LOG_MESSAGE, ResilienceConfig.Name);
-
         _asyncCircuitBreakerPolicy.Isolate();
     }
 
-    public async Task<bool> ExecuteAsync(Func<Task> handler)
+    public async Task<bool> ExecuteAsync(Func<CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
             async () =>
             {
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
-                    await handler().ConfigureAwait(false)
+                    await handler(cancellationToken).ConfigureAwait(false)
                 ).ConfigureAwait(false);
             }
         ).ConfigureAwait(false);
@@ -188,14 +163,15 @@ public abstract class ResiliencePolicyBase
         ResetCurrentRetryCount();
         return true;
     }
-    public async Task<bool> ExecuteAsync<TInput>(Func<TInput, Task> handler, TInput input)
+    public async Task<bool> ExecuteAsync<TInput>(Func<TInput, CancellationToken, Task> handler, TInput input, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
             async (context) =>
             {
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
                     await handler(
-                        (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
+                        (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY],
+                        cancellationToken
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
             },
@@ -208,7 +184,7 @@ public abstract class ResiliencePolicyBase
         ResetCurrentRetryCount();
         return true;
     }
-    public async Task<(bool success, TOutput output)> ExecuteAsync<TInput, TOutput>(Func<TInput, Task<TOutput>> handler, TInput input)
+    public async Task<(bool success, TOutput output)> ExecuteAsync<TInput, TOutput>(Func<TInput, CancellationToken, Task<TOutput>> handler, TInput input, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
             async (context) =>
@@ -217,7 +193,8 @@ public abstract class ResiliencePolicyBase
                     RETRY_POLICY_CONTEXT_OUTPUT_KEY,
                     await _asyncRetryPolicy.ExecuteAsync(async () =>
                         await handler(
-                            (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY]
+                            (TInput)context[RETRY_POLICY_CONTEXT_INPUT_KEY],
+                            cancellationToken
                         ).ConfigureAwait(false)
                     ).ConfigureAwait(false)
                 );
