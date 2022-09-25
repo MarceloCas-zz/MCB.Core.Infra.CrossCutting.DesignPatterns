@@ -19,7 +19,7 @@ public class Adapter
     public TTarget Adapt<TSource, TTarget>(TSource source)
     {
         if (source is null)
-            return default;
+            throw new ArgumentNullException(nameof(source));
 
         return _mapper.Map<TTarget>(source);
     }

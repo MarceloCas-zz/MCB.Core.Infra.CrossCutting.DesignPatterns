@@ -35,7 +35,9 @@ public abstract class ResiliencePolicyBase
     public ResiliencePolicyConfig ResilienceConfig => throw new NotImplementedException();
 
     // Constructors
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     protected ResiliencePolicyBase(ILogger logger)
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     {
         Logger = logger;
         ResiliencePolicyConfig = new ResiliencePolicyConfig();

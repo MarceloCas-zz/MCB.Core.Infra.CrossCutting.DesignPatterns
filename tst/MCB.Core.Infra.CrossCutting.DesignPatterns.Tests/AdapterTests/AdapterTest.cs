@@ -1,5 +1,8 @@
 ﻿using FluentAssertions;
 using Mapster;
+using MCB.Core.Infra.CrossCutting.DependencyInjection;
+using MCB.Core.Infra.CrossCutting.DependencyInjection.Abstractions.Enums;
+using MCB.Core.Infra.CrossCutting.DependencyInjection.Abstractions.Interfaces;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Tests.AdapterTests.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,11 +18,14 @@ public class AdapterTest
     {
         // Arrange
         var serviceCollection = new ServiceCollection();
+        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
+        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+
         IoC.Bootstrapper.ConfigureServices(
-            serviceCollection,
+            dependencyInjectionContainer,
             adapterConfiguration =>
             {
-                adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                adapterConfiguration.DependencyInjectionLifecycle = DependencyInjectionLifecycle.Singleton;
                 adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
                 {
                     var typeAdapterConfig = new TypeAdapterConfig();
@@ -30,8 +36,7 @@ public class AdapterTest
                 });
             }
         );
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        var adapter = serviceProvider.GetService<IAdapter>();
+        var adapter = dependencyInjectionContainer.Resolve<IAdapter>();
 
         if (adapter == null)
         {
@@ -76,11 +81,14 @@ public class AdapterTest
     {
         // Arrange
         var serviceCollection = new ServiceCollection();
+        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
+        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+
         IoC.Bootstrapper.ConfigureServices(
-            serviceCollection,
+            dependencyInjectionContainer,
             adapterConfiguration =>
             {
-                adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                adapterConfiguration.DependencyInjectionLifecycle = DependencyInjectionLifecycle.Singleton;
                 adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
                 {
                     var typeAdapterConfig = new TypeAdapterConfig();
@@ -91,8 +99,7 @@ public class AdapterTest
                 });
             }
         );
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        var adapter = serviceProvider.GetService<IAdapter>();
+        var adapter = dependencyInjectionContainer.Resolve<IAdapter>();
 
         if (adapter == null)
         {
@@ -128,28 +135,39 @@ public class AdapterTest
     {
         // Arrange
         var serviceCollection = new ServiceCollection();
+        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
+        bool hasRaisedException = false;
+
         IoC.Bootstrapper.ConfigureServices(
-            serviceCollection,
+            dependencyInjectionContainer,
             adapterConfiguration =>
             {
-                adapterConfiguration.AdapterServiceLifetime = ServiceLifetime.Singleton;
+                adapterConfiguration.DependencyInjectionLifecycle = DependencyInjectionLifecycle.Singleton;
                 adapterConfiguration.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() =>
                 {
                     var typeAdapterConfig = new TypeAdapterConfig();
-
                     typeAdapterConfig.ForType<AddressDto, Address>();
 
                     return typeAdapterConfig;
                 });
             }
         );
-        var serviceProvider = serviceCollection.BuildServiceProvider();
-        var adapter = serviceProvider.GetService<IAdapter>();
+        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+        var adapter = dependencyInjectionContainer.Resolve<IAdapter>();
 
         // Act
-        var address = adapter.Adapt<AddressDto, Address>(null);
+        var address = default(Address);
+
+        try
+        {
+            address = adapter.Adapt<AddressDto, Address>(null);
+        }
+        catch (ArgumentNullException ex)
+        {
+            hasRaisedException = ex.ParamName == "source";
+        }
 
         // Assert
-        address.Should().BeNull();
+        hasRaisedException.Should().BeTrue();
     }
 }

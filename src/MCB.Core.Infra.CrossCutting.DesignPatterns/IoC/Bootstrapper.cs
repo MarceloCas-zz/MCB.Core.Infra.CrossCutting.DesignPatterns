@@ -1,15 +1,15 @@
 ﻿using Mapster;
 using MapsterMapper;
+using MCB.Core.Infra.CrossCutting.DependencyInjection.Abstractions.Interfaces;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace MCB.Core.Infra.CrossCutting.DesignPatterns.IoC;
 
 public static class Bootstrapper
 {
     // Private Static Methods
-    private static void ConfigureServicesForAdapterPattern(IServiceCollection services, Action<AdapterConfig> adapterConfigurationAction)
+    private static void ConfigureServicesForAdapterPattern(IDependencyInjectionContainer dependencyInjectionContainer, Action<AdapterConfig> adapterConfigurationAction)
     {
         if (adapterConfigurationAction is null)
             return;
@@ -17,29 +17,25 @@ public static class Bootstrapper
         var adapterConfig = new AdapterConfig();
         adapterConfigurationAction(adapterConfig);
 
-        services.Add(
-            new ServiceDescriptor(
-                serviceType: typeof(IMapper),
-                factory: serviceProvider => new Mapper(adapterConfig.TypeAdapterConfigurationFunction?.Invoke() ?? new TypeAdapterConfig()),
-                lifetime: adapterConfig.AdapterServiceLifetime
-            )
+        dependencyInjectionContainer.Register(
+            lifecycle: adapterConfig.DependencyInjectionLifecycle,
+            concreteType: typeof(IMapper),
+            concreteTypeFactory: dependencyInjectionContainer => new Mapper(adapterConfig.TypeAdapterConfigurationFunction?.Invoke() ?? new TypeAdapterConfig())
         );
 
-        services.Add(
-            new ServiceDescriptor(
-                serviceType: typeof(IAdapter),
-                implementationType: typeof(Adapter.Adapter),
-                lifetime: adapterConfig.AdapterServiceLifetime
-            )
+        dependencyInjectionContainer.Register(
+            lifecycle: adapterConfig.DependencyInjectionLifecycle,
+            abstractionType: typeof(IAdapter),
+            concreteType: typeof(Adapter.Adapter)
         );
     }
 
     // Public Static Methods
     public static void ConfigureServices(
-        IServiceCollection services,
+        IDependencyInjectionContainer dependencyInjectionContainer,
         Action<AdapterConfig> adapterConfigurationAction
     )
     {
-        ConfigureServicesForAdapterPattern(services, adapterConfigurationAction);
+        ConfigureServicesForAdapterPattern(dependencyInjectionContainer, adapterConfigurationAction);
     }
 }
