@@ -17,9 +17,8 @@ public class AdapterTest
     public void Adapter_Shoul_Be_Adapt_Correctly()
     {
         // Arrange
-        var serviceCollection = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
-        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
+        dependencyInjectionContainer.Build();
 
         IoC.Bootstrapper.ConfigureServices(
             dependencyInjectionContainer,
@@ -80,9 +79,8 @@ public class AdapterTest
     public void Adapter_Shoul_Be_Adapt_Correctly_With_Existing_Target()
     {
         // Arrange
-        var serviceCollection = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
-        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
+        dependencyInjectionContainer.Build();
 
         IoC.Bootstrapper.ConfigureServices(
             dependencyInjectionContainer,
@@ -134,8 +132,7 @@ public class AdapterTest
     public void Adapter_Should_Not_Adapt_Null_Value()
     {
         // Arrange
-        var serviceCollection = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(serviceCollection);
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
         bool hasRaisedException = false;
 
         IoC.Bootstrapper.ConfigureServices(
@@ -152,7 +149,7 @@ public class AdapterTest
                 });
             }
         );
-        dependencyInjectionContainer.Build(serviceCollection.BuildServiceProvider());
+        dependencyInjectionContainer.Build();
         var adapter = dependencyInjectionContainer.Resolve<IAdapter>();
 
         // Act

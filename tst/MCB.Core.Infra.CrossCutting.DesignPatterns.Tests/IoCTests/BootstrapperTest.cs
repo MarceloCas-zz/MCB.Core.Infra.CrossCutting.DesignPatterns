@@ -20,14 +20,12 @@ public class BootstrapperTest
     public void Bootstrapper_Should_Configure_For_Adapter_Patterns()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(services);
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
         var adapterConfigAux = default(AdapterConfig);
 
         // Act
         IoC.Bootstrapper.ConfigureServices(dependencyInjectionContainer, adapterConfig => { adapterConfigAux = adapterConfig; });
-        var serviceProvider = services.BuildServiceProvider();
-        dependencyInjectionContainer.Build(serviceProvider);
+        dependencyInjectionContainer.Build();
 
         // Assert
         var registrationCollection = dependencyInjectionContainer.GetRegistrationCollection().ToList();
@@ -50,8 +48,7 @@ public class BootstrapperTest
     public void Bootstrapper_Should_Configure_With_Config_For_Adapter_Patterns()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(services);
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
         var adapterConfigAux = default(AdapterConfig);
 
         // Act
@@ -60,8 +57,7 @@ public class BootstrapperTest
             adapterConfig.TypeAdapterConfigurationFunction = new Func<TypeAdapterConfig>(() => { return new TypeAdapterConfig(); });
             adapterConfigAux = adapterConfig;
         });
-        var serviceProvider = services.BuildServiceProvider();
-        dependencyInjectionContainer.Build(serviceProvider);
+        dependencyInjectionContainer.Build();
 
         // Assert
         var registrationCollection = dependencyInjectionContainer.GetRegistrationCollection();
@@ -84,13 +80,11 @@ public class BootstrapperTest
     public void Bootstrapper_Should_Not_Configure_For_Adapter_Patterns()
     {
         // Arrange
-        var services = new ServiceCollection();
-        var dependencyInjectionContainer = new DependencyInjectionContainer(services);
+        var dependencyInjectionContainer = new DependencyInjectionContainer();
 
         // Act
         IoC.Bootstrapper.ConfigureServices(dependencyInjectionContainer, adapterConfigurationAction: null);
-        var serviceProvider = services.BuildServiceProvider();
-        dependencyInjectionContainer.Build(serviceProvider);
+        dependencyInjectionContainer.Build();
 
         // Assert
         var registrationCollection = dependencyInjectionContainer.GetRegistrationCollection();
