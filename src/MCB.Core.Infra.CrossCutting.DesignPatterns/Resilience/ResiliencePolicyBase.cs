@@ -151,12 +151,13 @@ public abstract class ResiliencePolicyBase
     public async Task<bool> ExecuteAsync(Func<CancellationToken, Task> handler, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
-            async () =>
+            async (cancellationToken) =>
             {
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
                     await handler(cancellationToken).ConfigureAwait(false)
                 ).ConfigureAwait(false);
-            }
+            },
+            cancellationToken
         ).ConfigureAwait(false);
 
         if (policyResult.Outcome != OutcomeType.Successful)
@@ -168,7 +169,7 @@ public abstract class ResiliencePolicyBase
     public async Task<bool> ExecuteAsync<TInput>(Func<TInput, CancellationToken, Task> handler, TInput input, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
-            async (context) =>
+            async (context, cancellationToken) =>
             {
                 await _asyncRetryPolicy.ExecuteAsync(async () =>
                     await handler(
@@ -177,7 +178,8 @@ public abstract class ResiliencePolicyBase
                     ).ConfigureAwait(false)
                 ).ConfigureAwait(false);
             },
-            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
+            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } },
+            cancellationToken
         ).ConfigureAwait(false);
 
         if (policyResult.Outcome != OutcomeType.Successful)
@@ -189,7 +191,7 @@ public abstract class ResiliencePolicyBase
     public async Task<(bool success, TOutput output)> ExecuteAsync<TInput, TOutput>(Func<TInput, CancellationToken, Task<TOutput>> handler, TInput input, CancellationToken cancellationToken)
     {
         var policyResult = await _asyncCircuitBreakerPolicy.ExecuteAndCaptureAsync(
-            async (context) =>
+            async (context, cancellationToken) =>
             {
                 context.Add(
                     RETRY_POLICY_CONTEXT_OUTPUT_KEY,
@@ -201,7 +203,8 @@ public abstract class ResiliencePolicyBase
                     ).ConfigureAwait(false)
                 );
             },
-            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } }
+            contextData: new Dictionary<string, object> { { RETRY_POLICY_CONTEXT_INPUT_KEY, input } },
+            cancellationToken
         ).ConfigureAwait(false);
 
         var success = policyResult.Outcome == OutcomeType.Successful;
