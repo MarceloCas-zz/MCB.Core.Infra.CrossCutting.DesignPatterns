@@ -1,4 +1,4 @@
-﻿using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Notifications.Interfaces;
+﻿using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Notifications;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Notifications.Models;
 using System.Collections.Concurrent;
 

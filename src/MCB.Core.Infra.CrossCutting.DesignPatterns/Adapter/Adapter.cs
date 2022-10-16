@@ -1,6 +1,5 @@
 ﻿using MapsterMapper;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("Bechmarks")]

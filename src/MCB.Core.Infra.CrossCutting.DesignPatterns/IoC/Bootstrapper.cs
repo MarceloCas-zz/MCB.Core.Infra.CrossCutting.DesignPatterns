@@ -2,7 +2,7 @@
 using MapsterMapper;
 using MCB.Core.Infra.CrossCutting.DependencyInjection.Abstractions.Interfaces;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Adapter;
-using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Notifications.Interfaces;
+using MCB.Core.Infra.CrossCutting.DesignPatterns.Abstractions.Notifications;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.IoC.Models;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Notifications;
 using MCB.Core.Infra.CrossCutting.DesignPatterns.Notifications.Interfaces;
@@ -48,5 +48,4 @@ public static class Bootstrapper
         dependencyInjectionContainer.RegisterScoped<INotificationPublisher, NotificationPublisher>();
         dependencyInjectionContainer.RegisterScoped<INotificationSubscriber, NotificationSubscriber>();
     }
-
 }
